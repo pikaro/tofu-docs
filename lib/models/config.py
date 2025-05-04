@@ -105,6 +105,7 @@ class Settings(BaseSettings):
         """Settings configuration."""
 
         env_nested_delimiter = '__'
+        env_ignore_empty = True
 
 
 class CliArgs(BaseModel):
