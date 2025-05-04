@@ -81,9 +81,9 @@ class Writer:
             log.exception('Error inserting marked block')
             raise
 
-        updated_content = '\n'.join(updated_lines).strip()
+        updated_content = '\n'.join(updated_lines).strip() + '\n'
 
-        changed = original_content.strip() != updated_content
+        changed = original_content != updated_content
 
         if changed:
             log.info(f'Updated {target} with {len(content.splitlines())} lines')
