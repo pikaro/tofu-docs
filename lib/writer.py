@@ -4,8 +4,6 @@ import logging
 import sys
 from pathlib import Path
 
-from pydantic import BaseModel
-
 from lib.common.helper import if_index, marker
 from lib.models.writer import WriterResult
 from lib.settings import settings

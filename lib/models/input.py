@@ -5,9 +5,14 @@ import re
 from pathlib import Path
 from typing import Any, Generic, TypeVar
 
-from pydantic import BaseModel, RootModel, computed_field, field_validator
+from pydantic import (
+    BaseModel,
+    RootModel,
+    computed_field,
+    model_validator,
+)
 
-from lib.common.helper import find_block
+from lib.common.helper import find_blocks, indent
 from lib.models.dummy import NoDefault
 
 log = logging.getLogger(__name__)
@@ -60,6 +65,12 @@ class HclNamedResource(RootModel):
 
     root: dict[str, HclResourceFields]
 
+    @computed_field
+    @property
+    def name(self) -> str:
+        """Return the name of the variable."""
+        return next(iter(self.root.keys()))
+
 
 class HclLocalFields(RootModel):
     """Represents the fields of a local variable in HCL."""
@@ -86,39 +97,46 @@ HclListable = HclVariableFields | HclOutputFields | HclLocalFields | HclNamedRes
 ListableT = TypeVar('ListableT', bound=HclListable)
 
 
-class SingleElementRootModel(RootModel[dict[str, ListableT]]):
+class HclRootModel(RootModel[dict[str, ListableT]]):
     """Represents a root model with a single element."""
 
     root: dict[str, ListableT]
     _start_regex: str
     _end_regex: str = r'^}$'
 
-    @classmethod
-    @field_validator('root')
-    def validate_root(cls, value: dict[str, ListableT]) -> dict[str, ListableT]:
-        """Validate the root of the variable."""
-        if len(value) != 1:
-            _err = 'There must be exactly one variable defined.'
-            raise ValueError(_err)
-        return value
 
-    def find(self, file_content: str, start_regex: str | None = None) -> tuple[int, str]:
+class SingleElementRootModel(HclRootModel[ListableT]):
+    """Represents a root model with a single element."""
+
+    @computed_field
+    @property
+    def name(self) -> str:
+        """Return the name of the variable."""
+        return next(iter(self.root.keys()))
+
+    @model_validator(mode='after')
+    def validate_root(self):
+        """Validate the root of the element."""
+        if len(self.root) != 1:
+            _err = 'There must be exactly one element defined.'
+            raise ValueError(_err)
+        return self
+
+    def find(self, file_content: str, start_regex: str | None = None) -> list[tuple[int, str]]:
         """Find the LOC and block of the variable in the file."""
-        name = next(iter(self.root.keys()))
-        start_regex = (start_regex or self._start_regex).format(name=name)
-        pattern = re.search(start_regex, file_content, re.MULTILINE)
-        loc = None
-        if pattern:
-            loc = file_content.count('\n', 0, pattern.start()) + 1
-            log.debug(f'Found {start_regex} at LOC {loc}')
-        if loc is None:
+        start_regex = (start_regex or self._start_regex).format(name=self.name)
+        patterns = list(re.finditer(start_regex, file_content, re.MULTILINE))
+        locs: list[int] = []
+        if patterns:
+            for pattern in patterns:
+                loc = file_content.count('\n', 0, pattern.start()) + 1
+                log.debug(f'Found {start_regex} at LOC {loc}')
+                locs.append(loc)
+        if not locs:
             _err = f'{start_regex} not found in file'
             raise ValueError(_err)
-        block = find_block(file_content, loc, start_regex, end_regex=self._end_regex)
-        if block is None:
-            _err = f'{start_regex} block not found in file'
-            raise ValueError(_err)
-        return loc, block
+        blocks = find_blocks(file_content, locs, start_regex, end_regex=self._end_regex)
+        return [(loc, block) for loc, block in zip(locs, blocks, strict=False)]
 
 
 class HclVariable(SingleElementRootModel[HclVariableFields]):
@@ -132,21 +150,58 @@ class HclOutput(SingleElementRootModel[HclOutputFields]):
 
     _start_regex = r'^output "{name}" {{$'
 
+    @computed_field
+    @property
+    def is_validation(self) -> bool:
+        """Check if the output is a validation."""
+        return self.name.startswith(('validate_', 'validation_'))
+
+
+class HclLocalBlock(HclRootModel[HclLocalFields]):
+    """Represents a local block in HCL.
+
+    As parsed by hcl2, the individual variables are properties on a local block, not separate items.
+    This breaks the SingleElementRootModel, e.g. for self.name.
+    """
+
 
 class HclLocal(SingleElementRootModel[HclLocalFields]):
-    """Represents a local variable in HCL."""
+    """Represents a single local variable in HCL."""
 
     _start_regex = r'^locals {{$'
+
+    def find(self, file_content: str, start_regex: str | None = None) -> list[tuple[int, str]]:
+        """Find the LOC of the variable in the file."""
+        block_matches = super().find(file_content, start_regex=start_regex)
+        loc_matches: list[tuple[int, str, int]] = []
+        for loc, block in block_matches:
+            matches = list(re.finditer(rf'^\s*{self.name}\s*=', block, re.MULTILINE))
+
+            if not matches:
+                log.debug(f'No matches for {self.name} in block')
+                continue
+
+            if len(matches) > 1:
+                log.warning(f'Found {len(matches)} matches for {self.name} in block')
+                matches.sort(key=lambda m: indent(m.group(0)))
+            prev = block[: matches[0].start()]
+            prev_lines = len(prev.split('\n')) - 1
+            loc_matches.append((loc + prev_lines, block, indent(matches[0].group(0))))
+
+        if not loc_matches:
+            _err = f'{self.name} not found in file'
+            raise ValueError(_err)
+        loc_matches.sort(key=lambda m: m[2])
+        return [(loc_matches[0][0], loc_matches[0][1])]
 
 
 class HclResource(SingleElementRootModel[HclNamedResource]):
     """Represents a resource in HCL."""
 
-    def find(self, file_content: str, start_regex: str | None = None) -> tuple[int, str]:
+    def find(self, file_content: str, start_regex: str | None = None) -> list[tuple[int, str]]:
         """Find the LOC of the variable in the file."""
-        var_name = next(iter(self.root.keys()))
-        identifier = next(iter(self.root[var_name].root.keys()))
-        start_regex = rf'^resource "{var_name}" "{identifier}" {{{{'
+        identifier = self.root[self.name].name
+        start_regex = rf'^resource "{self.name}" "{identifier}" {{{{'
         return super().find(file_content, start_regex=start_regex)
 
 
@@ -154,7 +209,26 @@ class HclData(BaseModel):
     """Represents a data source in HCL."""
 
     resource: list[HclResource] = []
-    resource_flat: list[HclNamedResource] = []
+    locals: list[HclLocalBlock] = []
+    variable: list[HclVariable] = []
+    output: list[HclOutput] = []
+
+
+class ProcessedData(BaseModel):
+    """Represents the processed data from HCL."""
+
+    resource: list[HclNamedResource] = []
     locals: list[HclLocal] = []
     variable: list[HclVariable] = []
     output: list[HclOutput] = []
+    validation: list[HclOutput] = []
+
+
+class ParsedData(BaseModel):
+    """Represents the parsed data from HCL."""
+
+    resource: dict[str, ParsedHclItem[HclResourceFields]] = {}
+    locals: dict[str, ParsedHclItem[HclLocalFields]] = {}
+    variable: dict[str, ParsedHclItem[HclVariableFields]] = {}
+    output: dict[str, ParsedHclItem[HclOutputFields]] = {}
+    validation: dict[str, ParsedHclItem[HclOutputFields]] = {}
