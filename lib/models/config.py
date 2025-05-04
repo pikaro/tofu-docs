@@ -37,15 +37,15 @@ class TargetFileSettings(BaseModel):
 
     ## Usage
 
-    tbd
+    [tbd]
 
     ## Examples
 
-    tbd
+    [tbd]
 
     ## Notes
 
-    tbd
+    [tbd]
 
     """)
 
