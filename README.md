@@ -22,12 +22,16 @@ tofu-docs --module_path <path>
 Or via Docker:
 
 ```bash
-docker run -v $(<module path>):/module ghcr.io/pikaro/tofu-docs:latest
+docker run -v $(<module path>):/module 70696b61726f/tofu-docs:latest
 ```
 
 Or via `pre-commit`:
 
 ```yaml
+- repo: https://github.com/pikaro/tofu-docs
+  rev: v0.1.0
+  hooks:
+    - id: tofu-docs
 ```
 
 For other uses, see `tofu-docs --help`.
