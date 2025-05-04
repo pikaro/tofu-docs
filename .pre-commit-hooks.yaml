@@ -2,6 +2,6 @@
    name: tofu-docs
    description: Generate documentation for the project
    language: docker_image
-   entry: docker.io/70696b61726f/tofu-docs:dev
+   entry: docker.io/70696b61726f/tofu-docs:dev --module_path=/src
    files: (README.md|\.tf)$
    pass_filenames: false
