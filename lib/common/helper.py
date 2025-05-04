@@ -8,28 +8,34 @@ from lib.settings import settings
 log = logging.getLogger(__name__)
 
 
-def find_block(text: str, loc: int, start_regex: str, end_regex: str = r'^}$') -> str:
-    """Get a block of text from the LOC, starting with start_regex and ending with end_regex."""
-    lines = text.splitlines()
-    idx = loc - 1
-    if not lines or not lines[idx:]:
-        _err = f'Invalid LOC: {loc}, found {lines}'
+def find_blocks(text: str, locs: list[int], start_regex: str, end_regex: str = r'^}$') -> list[str]:
+    """Get a block of text from the LOCs, starting with start_regex and ending with end_regex."""
+    blocks = []
+    for loc in locs:
+        lines = text.splitlines()
+        idx = loc - 1
+        if not lines or not lines[idx:]:
+            _err = f'Invalid LOC: {loc}, found {lines}'
+            raise ValueError(_err)
+        if not re.match(start_regex, lines[idx]):
+            _err = f'Invalid start regex: {start_regex}, found {lines[idx]} on LOC {loc}'
+            raise ValueError(_err)
+        block = []
+        in_block = True
+        line = ''
+        for line in lines[idx:]:
+            block.append(line)
+            if re.match(end_regex, line):
+                in_block = False
+                break
+        if in_block:
+            _err = f'Invalid end regex: {end_regex}, found {line}'
+            raise ValueError(_err)
+        blocks.append('\n'.join(block))
+    if not blocks:
+        _err = f'No blocks found for {start_regex} in {text}'
         raise ValueError(_err)
-    if not re.match(start_regex, lines[idx]):
-        _err = f'Invalid start regex: {start_regex}, found {lines[idx]} on LOC {loc}'
-        raise ValueError(_err)
-    block = []
-    in_block = True
-    line = ''
-    for line in lines[idx:]:
-        block.append(line)
-        if re.match(end_regex, line):
-            in_block = False
-            break
-    if in_block:
-        _err = f'Invalid end regex: {end_regex}, found {line}'
-        raise ValueError(_err)
-    return '\n'.join(block)
+    return blocks
 
 
 BRACKETS = {
@@ -125,3 +131,8 @@ def if_index(lst: list[str], item: str) -> int:
         return lst.index(item)
     except ValueError:
         return -1
+
+
+def indent(line: str) -> int:
+    """Return the indentation level of the line."""
+    return len(line) - len(line.lstrip())

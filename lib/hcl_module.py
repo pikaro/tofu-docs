@@ -6,10 +6,7 @@ from typing import TYPE_CHECKING
 from lib.formatter import Formatter
 from lib.hcl_file import HclFile
 from lib.models.input import (
-    HclLocalFields,
-    HclOutputFields,
-    HclResourceFields,
-    HclVariableFields,
+    ParsedData,
     ParsedHclItem,
 )
 from lib.settings import settings
@@ -25,36 +22,27 @@ log = logging.getLogger(__name__)
 class HclModule:
     """Represents an HCL codebase."""
 
-    data: list[HclFile]
-
-    resource_flat: dict[str, ParsedHclItem[HclResourceFields]]
-    locals: dict[str, ParsedHclItem[HclLocalFields]]
-    variable: dict[str, ParsedHclItem[HclVariableFields]]
-    output: dict[str, ParsedHclItem[HclOutputFields]]
-    validation: dict[str, ParsedHclItem[HclOutputFields]]
+    _data: list[HclFile]
+    _parsed_data: ParsedData
 
     def __init__(self):
         """Initialize an OpenTofu module."""
-        self.data = []
+        self._data = []
 
         for f in settings.args.module_path.glob('*.tf'):
             if f.is_file():
                 if settings.config.format.skip_auto and f.name.startswith('auto.'):
                     log.info(f'Skipping auto-generated file: {f}')
                     continue
-                self.data.append(HclFile(f))
+                self._data.append(HclFile(f))
 
-        self.resource_flat = {}
-        self.locals = {}
-        self.variable = {}
-        self.output = {}
-        self.validation = {}
+        self._parsed_data = ParsedData()
 
-        for f in self.data:
+        for f in self._data:
 
             def _add_kind(kind: str, allow_duplicates: bool = False, f=f) -> None:
-                source_data = getattr(f, kind)
-                data = getattr(self, kind)
+                source_data = getattr(f.get_parsed_data(), kind)
+                data = getattr(self._parsed_data, kind)
 
                 for k, v in source_data.items():
                     if k in data and not allow_duplicates:
@@ -68,7 +56,7 @@ class HclModule:
             _add_kind('validation')
 
             allow_duplicates = not settings.config.format.add_resource_identifier
-            _add_kind('resource_flat', allow_duplicates=allow_duplicates)
+            _add_kind('resource', allow_duplicates=allow_duplicates)
 
     def format(self) -> str:
         """Format the data."""
@@ -117,28 +105,28 @@ class HclModule:
         output += '<!-- markdownlint-disable -->\n'
 
         if settings.config.format.include_resources:
-            output += self._format_markdown_section('Resources', self.resource_flat)
+            output += self._format_markdown_section('Resources', self._parsed_data.resource)
         if settings.config.format.include_locals:
-            output += self._format_markdown_section('Locals', self.locals)
+            output += self._format_markdown_section('Locals', self._parsed_data.locals)
 
         if settings.config.format.include_variables:
             if settings.config.format.required_variables_first:
-                data = {k: v for k, v in self.variable.items() if v.data.required}
+                data = {k: v for k, v in self._parsed_data.variable.items() if v.data.required}
                 output += self._format_markdown_section(
                     'Required Variables', data, skip_columns={'default'}
                 )
-                data = {k: v for k, v in self.variable.items() if not v.data.required}
+                data = {k: v for k, v in self._parsed_data.variable.items() if not v.data.required}
                 output += self._format_markdown_section('Optional Variables', data)
             else:
-                output += self._format_markdown_section('Variables', self.variable)
+                output += self._format_markdown_section('Variables', self._parsed_data.variable)
 
         if settings.config.format.include_outputs:
             skip_columns = None if settings.config.format.add_output_value else {'value'}
             output += self._format_markdown_section(
-                'Outputs', self.output, skip_columns=skip_columns
+                'Outputs', self._parsed_data.output, skip_columns=skip_columns
             )
             output += self._format_markdown_section(
-                'Validation', self.validation, skip_columns=skip_columns
+                'Validation', self._parsed_data.validation, skip_columns=skip_columns
             )
 
         output += '<!-- markdownlint-enable -->\n'
