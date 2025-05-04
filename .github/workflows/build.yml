@@ -67,3 +67,4 @@ jobs:
           context: .
           push: true
           tags: ${{ steps.tag.outputs.repo }}:${{ steps.tag.outputs.tag }}
+          platforms: linux/amd64,linux/arm64
