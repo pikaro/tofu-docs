@@ -175,7 +175,7 @@ class HclLocal(SingleElementRootModel[HclLocalFields]):
         block_matches = super().find(file_content, start_regex=start_regex)
         loc_matches: list[tuple[int, str, int]] = []
         for loc, block in block_matches:
-            matches = list(re.finditer(rf'^\s*{self.name}\s*=', block, re.MULTILINE))
+            matches = list(re.finditer(rf'^ *{self.name}\s*=', block, re.MULTILINE))
 
             if not matches:
                 log.debug(f'No matches for {self.name} in block')

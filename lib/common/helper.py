@@ -52,7 +52,7 @@ RE_HEREDOC = re.compile(r'<<-?(\w+)')
 # file.
 def find_prop_in_block(text: str, prop: str) -> str:  # noqa: C901 PLR0912 # Too many branches
     """Find a property in an HCL block."""
-    matches = list(re.finditer(rf'^\s*{prop}\s*=', text, re.MULTILINE))
+    matches = list(re.finditer(rf'^ *{prop}\s*=', text, re.MULTILINE))
     if len(matches) > 1:
         # Identify the match with the least number of leading spaces.
         # Catches cases where there's a nested object with e.g. a `default` propert.
@@ -117,7 +117,7 @@ def find_prop_in_block(text: str, prop: str) -> str:  # noqa: C901 PLR0912 # Too
     if bracket_stack:
         _err = f'Unmatched brackets in {prop} block'
         raise ValueError(_err)
-    return re.sub(rf'^\s*{prop}\s*=\s*', '', ret, count=1).strip()
+    return re.sub(rf'^ *{prop}\s*=\s*', '', ret, count=1).strip()
 
 
 def marker(kind: str) -> str:
