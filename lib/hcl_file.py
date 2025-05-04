@@ -39,6 +39,13 @@ class HclFile:
 
         self.data = HclData.model_validate(hcl2.loads(self.hcl))  # pyright: ignore[reportPrivateImportUsage]
 
+        if settings.config.format.remove_validation:
+            validations = [v for v in self.data.output if v.is_validation]
+            if validations:
+                validation_names = [v.name for v in validations]
+                self.data.output = list(filter(lambda x: x not in validations, self.data.output))
+                log.warning(f'Removed {len(validations)} validations: {validation_names}')
+
         self.resource_flat = {}
         self.locals = {}
         self.variable = {}
@@ -49,14 +56,13 @@ class HclFile:
             source_data = getattr(self.data, kind)
 
             for v in source_data:
-                k = next(iter(v.root.keys()))
-                if k in data and not allow_duplicates:
-                    _err = f'Already defined: {kind} {k}'
+                if v.name in data and not allow_duplicates:
+                    _err = f'Already defined: {kind} {v.name}'
                     raise ValueError(_err)
-                item = v.root[k]
-                log.debug(f'Found {kind} {k} as {type(item)}')
+                item = v.root[v.name]
+                log.debug(f'Found {kind} {v.name} as {type(item)}')
                 loc, block = v.find(self.hcl)
-                data[k] = ParsedHclItem[type(item)](
+                data[v.name] = ParsedHclItem[type(item)](
                     data=item,
                     loc=loc,
                     block=block,
@@ -68,15 +74,14 @@ class HclFile:
         _parse_kind('output')
 
         for v in self.data.resource:
-            resource_k = next(iter(v.root.keys()))
-            identifier_k = next(iter(v.root[resource_k].root.keys()))
+            identifier = v.root[v.name].name
             if settings.config.format.add_resource_identifier:
-                name = f'{resource_k}.{identifier_k}'
+                name = f'{v.name}.{identifier}'
             else:
-                name = resource_k
+                name = v.name
             resource = HclNamedResource(
                 root={
-                    name: v.root[resource_k].root[identifier_k],
+                    name: v.root[v.name].root[identifier],
                 }
             )
             object.__setattr__(resource, 'find', v.find)

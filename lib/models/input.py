@@ -60,6 +60,12 @@ class HclNamedResource(RootModel):
 
     root: dict[str, HclResourceFields]
 
+    @computed_field
+    @property
+    def name(self) -> str:
+        """Return the name of the variable."""
+        return next(iter(self.root.keys()))
+
 
 class HclLocalFields(RootModel):
     """Represents the fields of a local variable in HCL."""
@@ -93,6 +99,12 @@ class SingleElementRootModel(RootModel[dict[str, ListableT]]):
     _start_regex: str
     _end_regex: str = r'^}$'
 
+    @computed_field
+    @property
+    def name(self) -> str:
+        """Return the name of the variable."""
+        return next(iter(self.root.keys()))
+
     @classmethod
     @field_validator('root')
     def validate_root(cls, value: dict[str, ListableT]) -> dict[str, ListableT]:
@@ -104,8 +116,7 @@ class SingleElementRootModel(RootModel[dict[str, ListableT]]):
 
     def find(self, file_content: str, start_regex: str | None = None) -> tuple[int, str]:
         """Find the LOC and block of the variable in the file."""
-        name = next(iter(self.root.keys()))
-        start_regex = (start_regex or self._start_regex).format(name=name)
+        start_regex = (start_regex or self._start_regex).format(name=self.name)
         pattern = re.search(start_regex, file_content, re.MULTILINE)
         loc = None
         if pattern:
@@ -132,6 +143,12 @@ class HclOutput(SingleElementRootModel[HclOutputFields]):
 
     _start_regex = r'^output "{name}" {{$'
 
+    @computed_field
+    @property
+    def is_validation(self) -> bool:
+        """Check if the output is a validation."""
+        return self.name.startswith(('validate_', 'validation_'))
+
 
 class HclLocal(SingleElementRootModel[HclLocalFields]):
     """Represents a local variable in HCL."""
@@ -144,9 +161,8 @@ class HclResource(SingleElementRootModel[HclNamedResource]):
 
     def find(self, file_content: str, start_regex: str | None = None) -> tuple[int, str]:
         """Find the LOC of the variable in the file."""
-        var_name = next(iter(self.root.keys()))
-        identifier = next(iter(self.root[var_name].root.keys()))
-        start_regex = rf'^resource "{var_name}" "{identifier}" {{{{'
+        identifier = self.root[self.name].name
+        start_regex = rf'^resource "{self.name}" "{identifier}" {{{{'
         return super().find(file_content, start_regex=start_regex)
 
 
