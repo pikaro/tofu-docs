@@ -121,9 +121,9 @@ class Formatter(Generic[FormattableT]):
         table = self._make_table()
         table_text = tabulate.tabulate(table, headers='firstrow', tablefmt='github')
         table_text = re.sub(r'( )*\|( )*', r'\1|\2', table_text)
-        table_text = re.sub(r'(?<=\| )-+(?= \|)', '---', table_text)
+        table_text = re.sub(r'(?<=\|)-+(?=\|)', '---', table_text)
 
-        return table_text  # noqa: RET504 # Unnecessary assignment - easier to expand
+        return table_text  # noqa: RET504  # Unnecessary assignment - easier to expand
 
     def _format_html(self) -> str:
         """Format the data."""
