@@ -3,6 +3,8 @@
 """Generate Markdown documentation from OpenTofu source code."""
 
 import logging
+import sys
+from difflib import unified_diff
 
 import colorlog
 
@@ -42,4 +44,23 @@ if __name__ == '__main__':
     output = module.format()
 
     writer = Writer()
-    writer.write(output)
+    result = writer.write(output)
+
+    if result.changed and result.original_content:
+        log.warning('Documentation was changed')
+
+        if settings.config.debug:
+            diff = unified_diff(
+                result.original_content.splitlines(),
+                result.content.splitlines(),
+                lineterm='',
+            )
+            log.debug(f'Diff for {settings.args.module_path / settings.config.target}:')
+            print('\n    '.join(diff))
+    elif not result.original_content:
+        log.warning('File was created')
+
+    if result.changed:
+        sys.exit(settings.config.changed_exit_code)
+
+    log.info('Documentation was not changed')

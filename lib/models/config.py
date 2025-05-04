@@ -82,6 +82,7 @@ class Settings(BaseSettings):
     """Command-line arguments."""
 
     debug: bool = False
+    changed_exit_code: int = 0
 
     target: Path = Path('README.md')
     target_config: TargetFileSettings = TargetFileSettings()
@@ -115,6 +116,7 @@ class CliArgs(BaseModel):
     dump_config: bool = Field(default=False, description='Dump the configuration')
     dump_overwrite: bool = Field(default=False, description='Overwrite the configuration')
     config_file: Path | None = Field(default=None, description='Path to the config file')
+    changed_exit_code: int | None = Field(default=None, description='Exit code on changes')
 
     # These override the values from the config file if set, i.e. not None
     target: Path | None = Field(default=None, description='Path to the target file')

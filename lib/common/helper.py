@@ -50,7 +50,7 @@ def find_prop_in_block(text: str, prop: str) -> str:  # noqa: C901 PLR0912 # Too
     if len(matches) > 1:
         # Identify the match with the least number of leading spaces.
         # Catches cases where there's a nested object with e.g. a `default` propert.
-        log.warn(f'Found {len(matches)} matches for {prop} in block')
+        log.warning(f'Found {len(matches)} matches for {prop} in block')
         matches.sort(key=lambda m: len(m.group(0)) - len(m.group(0).lstrip()))
     idx = matches[0].start()
     bracket_stack = []

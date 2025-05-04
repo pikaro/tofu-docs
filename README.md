@@ -46,6 +46,9 @@ The default configuration is:
 ```yaml
 debug: false
 
+# The exit code to return if changes were made to the documentation
+changed_exit_code: 0
+
 # Target file to write the documentation to, relative to module root
 target: 'README.md'
 

@@ -4,7 +4,10 @@ import logging
 import sys
 from pathlib import Path
 
+from pydantic import BaseModel
+
 from lib.common.helper import if_index, marker
+from lib.models.writer import WriterResult
 from lib.settings import settings
 
 log = logging.getLogger(__name__)
@@ -44,8 +47,9 @@ def _insert_marked_block(content: list[str], docs: str) -> list[str]:
 class Writer:
     """Writes the generated documentation to the target file."""
 
-    def write(self, content: str) -> None:
+    def write(self, content: str) -> WriterResult:
         """Write the generated documentation to the target file."""
+        changed = False
         target = settings.args.module_path / settings.config.target
 
         if isinstance(target, str):
@@ -54,28 +58,41 @@ class Writer:
         if _is_stdout_target(str(target)):
             log.info('Writing to stdout')
             print(content)
-            return
+            return WriterResult(changed=changed, content=content, original_content=None)
 
         if _is_stderr_target(str(target)):
             log.info('Writing to stderr')
             print(content, file=sys.stderr)
-            return
+            return WriterResult(changed=changed, content=content, original_content=None)
 
         log.info(f'Writing to {target}')
 
         if not target.exists():
+            changed = True
             log.info(f'Creating {target}')
             target.parent.mkdir(parents=True, exist_ok=True)
             target.touch()
             template = settings.config.target_config.empty_header.format(module=target.stem)
             _ = target.write_text(template)
 
-        lines = target.read_text().splitlines()
+        original_content = target.read_text()
+        lines = original_content.splitlines()
         try:
             updated_lines = _insert_marked_block(lines, content)
         except ValueError:
             log.exception('Error inserting marked block')
             raise
 
-        _ = target.write_text('\n'.join(updated_lines))
-        log.info(f'Updated {target} with {len(content.splitlines())} lines')
+        updated_content = '\n'.join(updated_lines).strip()
+
+        changed = original_content.strip() != updated_content
+
+        if changed:
+            log.info(f'Updated {target} with {len(content.splitlines())} lines')
+            _ = target.write_text(updated_content)
+
+        return WriterResult(
+            changed=changed,
+            content=updated_content,
+            original_content=original_content,
+        )
