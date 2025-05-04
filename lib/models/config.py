@@ -65,7 +65,9 @@ class FormatSettings(BaseModel):
     skip_auto: bool = True
     sort_order: SortOrder = 'alpha-asc'
 
-    remove_validation: bool = True
+    validation_remove: bool = True
+    validation_separate: bool = True
+
     remove_empty_columns: bool = True
 
     required_variables_first: bool = True

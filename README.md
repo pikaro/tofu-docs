@@ -83,7 +83,9 @@ format:
   # Valid values: alpha-asc.
   sort_order: alpha-asc
   # Remove outputs starting with `validation_` and `validate_`
-  remove_validation: true
+  validation_remove: false
+  # Put validations in a separate section
+  validation_separate: true
   # Remove empty columns from the tables
   remove_empty_columns: true
   # Make a separate section for required / optional variables

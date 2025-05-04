@@ -29,6 +29,7 @@ class HclFile:
     locals: dict[str, ParsedHclItem[HclLocalFields]]
     variable: dict[str, ParsedHclItem[HclVariableFields]]
     output: dict[str, ParsedHclItem[HclOutputFields]]
+    validation: dict[str, ParsedHclItem[HclOutputFields]]
 
     def __init__(self, path: Path):
         """Initialize an HCL file."""
@@ -39,17 +40,20 @@ class HclFile:
 
         self.data = HclData.model_validate(hcl2.loads(self.hcl))  # pyright: ignore[reportPrivateImportUsage]
 
-        if settings.config.format.remove_validation:
+        if settings.config.format.validation_remove or settings.config.format.validation_separate:
             validations = [v for v in self.data.output if v.is_validation]
             if validations:
                 validation_names = [v.name for v in validations]
                 self.data.output = list(filter(lambda x: x not in validations, self.data.output))
                 log.warning(f'Removed {len(validations)} validations: {validation_names}')
+            if settings.config.format.validation_separate:
+                self.data.validation = validations
 
         self.resource_flat = {}
         self.locals = {}
         self.variable = {}
         self.output = {}
+        self.validation = {}
 
         def _parse_kind(kind: str, allow_duplicates: bool = False):
             data = getattr(self, kind)
@@ -72,6 +76,7 @@ class HclFile:
         _parse_kind('locals')
         _parse_kind('variable')
         _parse_kind('output')
+        _parse_kind('validation')
 
         for v in self.data.resource:
             identifier = v.root[v.name].name

@@ -174,3 +174,4 @@ class HclData(BaseModel):
     locals: list[HclLocal] = []
     variable: list[HclVariable] = []
     output: list[HclOutput] = []
+    validation: list[HclOutput] = []
