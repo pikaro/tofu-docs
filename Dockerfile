@@ -5,11 +5,12 @@ ENV PYTHONPATH="/usr/local/lib/python3.13/site-packages"
 WORKDIR /app
 
 # FIXME: https://github.com/python/cpython/issues/120308
+
 RUN --mount=type=bind,source=./pyproject.toml,target=/app/pyproject.toml \
     --mount=type=bind,source=./poetry.lock,target=/app/poetry.lock \
     python3 -m venv .venv && \
     source .venv/bin/activate && \
-    pip install --no-cache-dir poetry && \
+    pip install --no-cache-dir 'poetry>=2.0,<3.0' && \
     poetry self add poetry-plugin-export && \
     poetry export -f requirements.txt --only main --no-interaction --no-ansi > requirements.txt && \
     deactivate && \
