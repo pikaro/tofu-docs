@@ -79,11 +79,11 @@ class SettingsSingleton(metaclass=SingletonMeta):
             yaml.representer.add_representer(WindowsPath, path_representer)
             self.config = Settings()
             with self.config_file.open('w', encoding='utf-8') as f:
-                yaml.dump(self.config.model_dump(), f)
+                yaml.dump(self.config.model_dump(round_trip=True), f)
 
     def _override(self):
         for k, v in self.args.model_dump().items():
-            if k in self.config.model_dump() and v is not None:
+            if k in self.config.model_dump(round_trip=True) and v is not None:
                 setattr(self.config, k, v)
 
 

@@ -5,7 +5,7 @@ import os
 from pathlib import Path
 from textwrap import dedent
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, computed_field
 from pydantic_settings import (
     BaseSettings,
     EnvSettingsSource,
@@ -13,8 +13,8 @@ from pydantic_settings import (
     YamlConfigSettingsSource,
 )
 
-from lib.const import SETTINGS_FILE
-from lib.types import InsertPosition, OutputFormat, SortOrder
+from lib.const import RE_SPEC_REPO_WITH_VAR, REPLACE_DEFAULT, SETTINGS_FILE
+from lib.types import InsertPosition, OutputFormat, ReplaceableField, SortOrder
 
 log = logging.getLogger(__name__)
 
@@ -80,6 +80,59 @@ class FormatSettings(BaseModel):
     include_outputs: bool = True
 
 
+class ReplaceSetting(BaseModel):
+    """Single search-replace for the replace patterns."""
+
+    pattern: str
+    replace: str
+    vars: dict[str, str] = {}
+    column: ReplaceableField
+
+
+class ReplaceSettings(BaseModel):
+    """Settings for the replace patterns."""
+
+    replacements: list[ReplaceSetting] = [
+        ReplaceSetting(
+            pattern=rf'repo {RE_SPEC_REPO_WITH_VAR}',
+            replace=REPLACE_DEFAULT,
+            vars={'namespace': 'globaldatanet/'},
+            column='description',
+        ),
+        ReplaceSetting(
+            pattern=rf'module {RE_SPEC_REPO_WITH_VAR}',
+            replace=REPLACE_DEFAULT,
+            vars={'namespace': 'globaldatanet/landing-zone-'},
+            column='description',
+        ),
+        ReplaceSetting(
+            pattern=rf'^any\s+#\s+passthrough to repo {RE_SPEC_REPO_WITH_VAR}$',
+            replace=f'See {REPLACE_DEFAULT}',
+            vars={'namespace': 'globaldatanet/'},
+            column='type',
+        ),
+        ReplaceSetting(
+            pattern=rf'^any\s+#\s+passthrough to module {RE_SPEC_REPO_WITH_VAR}$',
+            replace=f'See {REPLACE_DEFAULT}',
+            vars={'namespace': 'globaldatanet/landing-zone-'},
+            column='type',
+        ),
+    ]
+
+    @computed_field
+    @property
+    def replacements_formatted(self) -> list[ReplaceSetting]:
+        """Return the replacements formatted for the output."""
+        return [
+            ReplaceSetting(
+                pattern=replace.pattern.format(**replace.vars),
+                replace=replace.replace.format(**replace.vars),
+                column=replace.column,
+            )
+            for replace in self.replacements
+        ]
+
+
 class Settings(BaseSettings):
     """Command-line arguments."""
 
@@ -89,6 +142,7 @@ class Settings(BaseSettings):
     target: Path = Path('README.md')
     target_config: TargetFileSettings = TargetFileSettings()
     format: FormatSettings = FormatSettings()
+    replace: ReplaceSettings = ReplaceSettings()
 
     @classmethod
     def settings_customise_sources(

@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Generic, TypeVar
 
 import tabulate
 
-from lib.common.helper import if_index
+from lib.common.helper import if_index, markdown_to_plaintext
 from lib.models.input import ParsedHclItem
 from lib.models.output import get_output_model
 from lib.settings import settings
@@ -21,6 +21,7 @@ FormattableT = TypeVar('FormattableT', bound=ParsedHclItem)
 log = logging.getLogger(__name__)
 
 RE_BR = re.compile(r'(^(\s*<br/>\s*)+|(\s*<br/>\s*)+$)')
+RE_PRE = re.compile(r'</?pre>')
 
 
 def _collapse_column(table: list[list[str]], column: str, keep_first_line: bool = False) -> None:
@@ -36,8 +37,12 @@ def _collapse_column(table: list[list[str]], column: str, keep_first_line: bool 
                 first = lines[0].strip()
                 elem = '<br/>'.join(lines[1:]).strip()
                 elem = RE_BR.sub('', elem)
-            if len(elem) > settings.config.format.collapsible_long_threshold:
+
+            elem_plain = RE_PRE.sub('', elem)
+            elem_plain = markdown_to_plaintext(elem_plain)
+            if len(elem_plain) > settings.config.format.collapsible_long_threshold:
                 elem = f'<details>{elem}</details>'
+
             row[idx] = f'{first}<br/>{elem}' if keep_first_line else elem
 
 
