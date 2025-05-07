@@ -8,8 +8,6 @@ from difflib import unified_diff
 
 import colorlog
 
-from lib.writer import Writer
-
 if __name__ == '__main__':
     handler = colorlog.StreamHandler()
     handler.setFormatter(
@@ -25,16 +23,16 @@ if __name__ == '__main__':
 
     root_log = logging.getLogger()
     root_log.addHandler(handler)
-    root_log.setLevel(logging.INFO)
+
+    from lib.hcl_module import HclModule
+    from lib.models.config import settings
+    from lib.writer import Writer
+
+    settings.dump()
 
     log = logging.getLogger(__name__)
 
-    from lib.hcl_module import HclModule
-    from lib.settings import settings
-
-    root_log.setLevel(logging.DEBUG if settings.config.debug else logging.INFO)
-
-    log.info(f'Generating documentation for {settings.args.module_path}')
+    log.info(f'Generating documentation for {settings.module_path}')
     log.debug('Debug mode is enabled')
 
     module = HclModule()
@@ -49,18 +47,18 @@ if __name__ == '__main__':
     if result.changed and result.original_content:
         log.warning('Documentation was changed')
 
-        if settings.config.debug:
+        if settings.debug:
             diff = unified_diff(
                 result.original_content.splitlines(),
                 result.content.splitlines(),
                 lineterm='',
             )
-            log.debug(f'Diff for {settings.args.module_path / settings.config.target}:')
+            log.debug(f'Diff for {settings.module_path / settings.target}:')
             print('\n    '.join(diff))
     elif not result.original_content:
         log.warning('File was created')
 
     if result.changed:
-        sys.exit(settings.config.changed_exit_code)
+        sys.exit(settings.changed_exit_code)
 
     log.info('Documentation was not changed')

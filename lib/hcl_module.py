@@ -5,11 +5,11 @@ from typing import TYPE_CHECKING
 
 from lib.formatter import Formatter
 from lib.hcl_file import HclFile
+from lib.models.config import settings
 from lib.models.input import (
     ParsedData,
     ParsedHclItem,
 )
-from lib.settings import settings
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -29,9 +29,9 @@ class HclModule:
         """Initialize an OpenTofu module."""
         self._data = []
 
-        for f in settings.args.module_path.glob('*.tf'):
+        for f in settings.module_path.glob('*.tf'):
             if f.is_file():
-                if settings.config.format.skip_auto and f.name.startswith('auto.'):
+                if settings.format.skip_auto and f.name.startswith('auto.'):
                     log.info(f'Skipping auto-generated file: {f}')
                     continue
                 self._data.append(HclFile(f))
@@ -55,7 +55,7 @@ class HclModule:
             _add_kind('output')
             _add_kind('validation')
 
-            allow_duplicates = not settings.config.format.add_resource_identifier
+            allow_duplicates = not settings.format.add_resource_identifier
             _add_kind('resource', allow_duplicates=allow_duplicates)
 
     def format(self) -> str:
@@ -64,11 +64,11 @@ class HclModule:
             'markdown': self._format_markdown,
         }
 
-        if settings.config.target_config.format not in _formats:
-            _err = f'Invalid format: {settings.config.target_config.format}'
+        if settings.target_config.format not in _formats:
+            _err = f'Invalid format: {settings.target_config.format}'
             raise ValueError(_err)
 
-        return _formats[settings.config.target_config.format]()
+        return _formats[settings.target_config.format]()
 
     @staticmethod
     def _format_markdown_section(
@@ -83,34 +83,34 @@ class HclModule:
             formatter = Formatter(data, skip_columns=skip_columns)
             return formatter.format()
 
-        heading = settings.config.target_config.heading_level * '#'
+        heading = settings.target_config.heading_level * '#'
         subheading = heading + '#'
         output = ''
-        if settings.config.format.collapsible_sections:
+        if settings.format.collapsible_sections:
             output += '<details>\n'
             output += f'<summary>{section_name}</summary>\n\n'
         output += f'{subheading} {section_name}\n\n'
         output += _format(data, skip_columns=skip_columns)
-        if settings.config.format.collapsible_sections:
+        if settings.format.collapsible_sections:
             output += '\n</details>\n'
         output += '\n\n'
         return output
 
     def _format_markdown(self) -> str:
         """Format the data as Markdown."""
-        heading = settings.config.target_config.heading_level * '#'
+        heading = settings.target_config.heading_level * '#'
 
-        output = f'{heading} {settings.config.target_config.heading}\n\n'
+        output = f'{heading} {settings.target_config.heading}\n\n'
 
         output += '<!-- markdownlint-disable -->\n'
 
-        if settings.config.format.include_resources:
+        if settings.format.include_resources:
             output += self._format_markdown_section('Resources', self._parsed_data.resource)
-        if settings.config.format.include_locals:
+        if settings.format.include_locals:
             output += self._format_markdown_section('Locals', self._parsed_data.locals)
 
-        if settings.config.format.include_variables:
-            if settings.config.format.required_variables_first:
+        if settings.format.include_variables:
+            if settings.format.required_variables_first:
                 data = {k: v for k, v in self._parsed_data.variable.items() if v.data.required}
                 output += self._format_markdown_section(
                     'Required Variables', data, skip_columns={'default'}
@@ -120,8 +120,8 @@ class HclModule:
             else:
                 output += self._format_markdown_section('Variables', self._parsed_data.variable)
 
-        if settings.config.format.include_outputs:
-            skip_columns = None if settings.config.format.add_output_value else {'value'}
+        if settings.format.include_outputs:
+            skip_columns = None if settings.format.add_output_value else {'value'}
             output += self._format_markdown_section(
                 'Outputs', self._parsed_data.output, skip_columns=skip_columns
             )

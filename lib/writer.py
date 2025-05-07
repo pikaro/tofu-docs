@@ -1,12 +1,13 @@
 """Writer for the target file."""
 
 import logging
+import re
 import sys
 from pathlib import Path
 
 from lib.common.helper import if_index, marker
+from lib.models.config import settings
 from lib.models.writer import WriterResult
-from lib.settings import settings
 
 log = logging.getLogger(__name__)
 
@@ -30,7 +31,7 @@ def _insert_marked_block(content: list[str], docs: str) -> list[str]:
     end = if_index(content, end_marker)
 
     if start == -1 and end == -1:
-        if settings.config.target_config.insert_position == 'bottom':
+        if settings.target_config.insert_position == 'bottom':
             return [*content, start_marker, *docs.splitlines(), end_marker]
         _err = 'Invalid insert position'
         raise ValueError(_err)
@@ -48,20 +49,22 @@ class Writer:
     def write(self, content: str) -> WriterResult:
         """Write the generated documentation to the target file."""
         changed = False
-        target = settings.args.module_path / settings.config.target
-
-        if isinstance(target, str):
-            target = Path(target)
-
-        if _is_stdout_target(str(target)):
+        if _is_stdout_target(settings.target):
             log.info('Writing to stdout')
             print(content)
             return WriterResult(changed=changed, content=content, original_content=None)
 
-        if _is_stderr_target(str(target)):
+        if _is_stderr_target(settings.target):
             log.info('Writing to stderr')
             print(content, file=sys.stderr)
             return WriterResult(changed=changed, content=content, original_content=None)
+
+        target = Path(settings.target)
+        default_target = settings.__class__.__pydantic_fields__['target'].default
+        if not target.is_absolute() and not re.match(r'^\.\.?/', settings.target):
+            target = settings.module_path / settings.target
+            if settings.target != default_target:
+                log.warning(f'Target path {settings.target} is not relative, using {target}')
 
         log.info(f'Writing to {target}')
 
@@ -70,7 +73,7 @@ class Writer:
             log.info(f'Creating {target}')
             target.parent.mkdir(parents=True, exist_ok=True)
             target.touch()
-            template = settings.config.target_config.empty_header.format(module=target.stem)
+            template = settings.target_config.empty_header.format(module=target.stem)
             _ = target.write_text(template)
 
         original_content = target.read_text()

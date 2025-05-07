@@ -7,7 +7,7 @@ from typing import Generic, TypeVar
 from pydantic import BaseModel, computed_field
 
 from lib.common.formatter import format_description, format_validation
-from lib.common.helper import find_prop_in_block
+from lib.common.helper import field_replace, find_prop_in_block
 from lib.const import TERRAFORM_URL
 from lib.models.input import (
     HclDataModel,
@@ -57,14 +57,14 @@ class ItemRow(BaseModel, Generic[RowT]):
     def name(self) -> str:
         """Return a link to the resource."""
         relative_path = self._data.file.relative_to(self._module_root)
-        return f'[{self._name}](/{relative_path}#L{self._data.loc})'
+        return f'<a href="/{relative_path}#L{self._data.loc}" name="{self._name}">{self._name}</a>'
 
 
 @register_model(ParsedHclItem[HclResourceFields])
 class ResourceRow(ItemRow[HclResourceFields]):
     """Represents a row in the resource table."""
 
-    # FIXME: Good enough for AWS
+    # FIXME: Good enough for AWS / null / random / local
 
     @computed_field
     @property
@@ -94,6 +94,7 @@ class VariableRow(ItemRow[HclVariableFields]):
     def type(self) -> str:
         """Return the type of the variable."""
         prop = find_prop_in_block(self._data.block, 'type')
+        prop = field_replace('type', prop)
         return '<pre>' + prop.replace('\n', '<br/>') + '</pre>'
 
     @computed_field
@@ -109,13 +110,14 @@ class VariableRow(ItemRow[HclVariableFields]):
         if self._data.data.required:
             return '**required**'
         prop = find_prop_in_block(self._data.block, 'default')
+        prop = field_replace('default', prop)
         return '<pre>' + prop.replace('\n', '<br/>') + '</pre>'
 
     @computed_field
     @property
     def validation(self) -> str:
         """Return the validation of the variable."""
-        return format_validation(self._data.data.validation)
+        return format_validation('validation', self._data.data.validation)
 
 
 @register_model(ParsedHclItem[HclOutputFields])
@@ -133,13 +135,14 @@ class OutputRow(ItemRow[HclOutputFields]):
     def value(self) -> str:
         """Return the value of the output."""
         prop = find_prop_in_block(self._data.block, 'value')
+        prop = field_replace('value', prop)
         return '<pre>' + prop.replace('\n', '<br/>') + '</pre>'
 
     @computed_field
     @property
     def precondition(self) -> str:
         """Return the precondition of the output."""
-        return format_validation(self._data.data.precondition)
+        return format_validation('precondition', self._data.data.precondition)
 
     @computed_field
     @property
@@ -147,7 +150,7 @@ class OutputRow(ItemRow[HclOutputFields]):
         """Return the postcondition of the output."""
         if not self._data.data.postcondition:
             return ''
-        return ', '.join([v.error_message for v in self._data.data.postcondition])
+        return format_validation('postcondition', self._data.data.postcondition)
 
 
 def get_output_model(input_model_cls):

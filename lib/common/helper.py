@@ -3,9 +3,21 @@
 import logging
 import re
 
-from lib.settings import settings
+from markdown_it import MarkdownIt
+from mdit_plain.renderer import RendererPlain
+
+from lib.models.config import settings
+from lib.types import ReplaceableField
 
 log = logging.getLogger(__name__)
+
+
+def field_replace(field: ReplaceableField, content: str) -> str:
+    """Replace the field in the content by applying a list of regex patterns."""
+    for replace in settings.replace_formatted:
+        if replace.column == field:
+            content = re.sub(replace.pattern, replace.replace, content)
+    return content
 
 
 def find_blocks(text: str, locs: list[int], start_regex: str, end_regex: str = r'^}$') -> list[str]:
@@ -122,7 +134,7 @@ def find_prop_in_block(text: str, prop: str) -> str:  # noqa: C901 PLR0912 # Too
 
 def marker(kind: str) -> str:
     """Return the marker for the given kind."""
-    return f'<!-- {settings.config.target_config.marker} {kind} -->'
+    return f'<!-- {settings.target_config.marker} {kind} -->'
 
 
 def if_index(lst: list[str], item: str) -> int:
@@ -136,3 +148,14 @@ def if_index(lst: list[str], item: str) -> int:
 def indent(line: str) -> int:
     """Return the indentation level of the line."""
     return len(line) - len(line.lstrip())
+
+
+def markdown_to_plaintext(md: str) -> str:
+    """Convert markdown to plaintext."""
+    # Remove markdown formatting
+
+    # Protocol actually does look slightly incompatible but seems to work
+    # Just one ClassVar definition different
+    parser = MarkdownIt(renderer_cls=RendererPlain)  # pyright: ignore[reportArgumentType]
+
+    return parser.render(md)

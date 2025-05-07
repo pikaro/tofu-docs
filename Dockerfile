@@ -6,6 +6,8 @@ WORKDIR /app
 
 # FIXME: https://github.com/python/cpython/issues/120308
 
+# Writing and reading from / to file in same pipeline -> false positive
+# hadolint ignore=SC2094
 RUN --mount=type=bind,source=./pyproject.toml,target=/app/pyproject.toml \
     --mount=type=bind,source=./poetry.lock,target=/app/poetry.lock \
     python3 -m venv .venv && \
