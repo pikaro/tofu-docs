@@ -3,10 +3,13 @@
 ## Description
 
 `tofu-docs` is a (very limited) `terraform-docs` replacement that generates
-documentation for OpenTofu modules in Markdown format. The output format is
-similar to `terraform-docs`, but it is not a drop-in replacement. The goal of
-`tofu-docs` is only to generate README files for OpenTofu modules, and not to
-fulfill the many other roles that `terraform-docs` does.
+documentation for OpenTofu modules in Markdown format. This is a stopgap project
+while `terraform-docs` still doesn't support all OpenTofu features.
+
+The output format is similar to `terraform-docs`, but not a drop-in replacement.
+
+The goal of `tofu-docs` is only to generate README files for OpenTofu modules,
+and it lacks many other features that `terraform-docs` has.
 
 ## Installation
 
@@ -22,7 +25,7 @@ tofu-docs --module_path <path>
 Or via Docker:
 
 ```bash
-docker run -v $(<module path>):/module 70696b61726f/tofu-docs:latest
+docker run -v .:/module 70696b61726f/tofu-docs:latest
 ```
 
 Or via `pre-commit`:
@@ -34,7 +37,7 @@ Or via `pre-commit`:
     - id: tofu-docs
 ```
 
-For other uses, see `tofu-docs --help`.
+For CLI arguments, see `tofu-docs --help`.
 
 ## Configuration
 
@@ -102,6 +105,33 @@ format:
   include_variables: true
   # Include outputs in the documentation
   include_outputs: true
+
+# A list of patterns to search-replace per column, using Python regex.
+replace:
+    # The pattern to search for
+  - pattern: repo `([^`.]+)(\.([^`]+))?`
+    # the replacement string, with curly braces for references to `vars`
+    replace: '[\1](https://github.com/{namespace}\1/README.md#user-content-\3)'
+    # A dictionary of variables to replace in the replacement string
+    vars:
+      namespace: globaldatanet/
+    # The column to search in
+    column: description
+  - pattern: module `([^`.]+)(\.([^`]+))?`
+    replace: '[\1](https://github.com/{namespace}\1/README.md#user-content-\3)'
+    vars:
+      namespace: globaldatanet/landing-zone-
+    column: description
+  - pattern: ^any\s+#\s+passthrough to repo `([^`.]+)(\.([^`]+))?`$
+    replace: See [\1](https://github.com/{namespace}\1/README.md#user-content-\3)
+    vars:
+      namespace: globaldatanet/
+    column: type
+  - pattern: ^any\s+#\s+passthrough to module `([^`.]+)(\.([^`]+))?`$
+    replace: See [\1](https://github.com/{namespace}\1/README.md#user-content-\3)
+    vars:
+      namespace: globaldatanet/landing-zone-
+    column: type
 ```
 
 ## Caveat

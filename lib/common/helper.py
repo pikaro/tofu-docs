@@ -14,7 +14,7 @@ log = logging.getLogger(__name__)
 
 def field_replace(field: ReplaceableField, content: str) -> str:
     """Replace the field in the content by applying a list of regex patterns."""
-    for replace in settings.config.replace.replacements_formatted:
+    for replace in settings.config.replace_formatted:
         if replace.column == field:
             content = re.sub(replace.pattern, replace.replace, content)
     return content

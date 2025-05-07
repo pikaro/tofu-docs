@@ -89,10 +89,16 @@ class ReplaceSetting(BaseModel):
     column: ReplaceableField
 
 
-class ReplaceSettings(BaseModel):
-    """Settings for the replace patterns."""
+class Settings(BaseSettings):
+    """Command-line arguments."""
 
-    replacements: list[ReplaceSetting] = [
+    debug: bool = False
+    changed_exit_code: int = 0
+
+    target: Path = Path('README.md')
+    target_config: TargetFileSettings = TargetFileSettings()
+    format: FormatSettings = FormatSettings()
+    replace: list[ReplaceSetting] = [
         ReplaceSetting(
             pattern=rf'repo {RE_SPEC_REPO_WITH_VAR}',
             replace=REPLACE_DEFAULT,
@@ -121,7 +127,7 @@ class ReplaceSettings(BaseModel):
 
     @computed_field
     @property
-    def replacements_formatted(self) -> list[ReplaceSetting]:
+    def replace_formatted(self) -> list[ReplaceSetting]:
         """Return the replacements formatted for the output."""
         return [
             ReplaceSetting(
@@ -129,20 +135,8 @@ class ReplaceSettings(BaseModel):
                 replace=replace.replace.format(**replace.vars),
                 column=replace.column,
             )
-            for replace in self.replacements
+            for replace in self.replace
         ]
-
-
-class Settings(BaseSettings):
-    """Command-line arguments."""
-
-    debug: bool = False
-    changed_exit_code: int = 0
-
-    target: Path = Path('README.md')
-    target_config: TargetFileSettings = TargetFileSettings()
-    format: FormatSettings = FormatSettings()
-    replace: ReplaceSettings = ReplaceSettings()
 
     @classmethod
     def settings_customise_sources(
