@@ -7,9 +7,9 @@ from typing import TYPE_CHECKING, Generic, TypeVar
 import tabulate
 
 from lib.common.helper import if_index, markdown_to_plaintext
+from lib.models.config import settings
 from lib.models.input import ParsedHclItem
 from lib.models.output import get_output_model
-from lib.settings import settings
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -40,7 +40,7 @@ def _collapse_column(table: list[list[str]], column: str, keep_first_line: bool 
 
             elem_plain = RE_PRE.sub('', elem)
             elem_plain = markdown_to_plaintext(elem_plain)
-            if len(elem_plain) > settings.config.format.collapsible_long_threshold:
+            if len(elem_plain) > settings.format.collapsible_long_threshold:
                 elem = f'<details>{elem}</details>'
 
             row[idx] = f'{first}<br/>{elem}' if keep_first_line else elem
@@ -63,11 +63,11 @@ class Formatter(Generic[FormattableT]):
             'markdown': self._format_markdown,
         }
 
-        if settings.config.target_config.format not in _formats:
-            _err = f'Invalid format: {settings.config.target_config.format}'
+        if settings.target_config.format not in _formats:
+            _err = f'Invalid format: {settings.target_config.format}'
             raise ValueError(_err)
 
-        return _formats[settings.config.target_config.format]()
+        return _formats[settings.target_config.format]()
 
     def _make_table(self) -> list[list[str]]:
         item_name = next(iter(self.data))
@@ -75,7 +75,7 @@ class Formatter(Generic[FormattableT]):
         log.debug(f'Using {item_name} as the model')
 
         row_model = get_output_model(type(item))
-        row_item = row_model(_data=item, _name=item_name, _module_root=settings.args.module_path)
+        row_item = row_model(_data=item, _name=item_name, _module_root=settings.module_path)
 
         fields = row_item.model_dump().keys()
 
@@ -85,34 +85,34 @@ class Formatter(Generic[FormattableT]):
         for row_item_name, row_item in self.data.items():
             log.debug(f'Formatting {row_item_name}')
             formatted = row_model(
-                _data=row_item, _name=row_item_name, _module_root=settings.args.module_path
+                _data=row_item, _name=row_item_name, _module_root=settings.module_path
             )
             rows.append([str(getattr(formatted, v)) for v in fields if v not in self.skip_columns])
 
-        if settings.config.format.remove_empty_columns:
+        if settings.format.remove_empty_columns:
             columns = list(zip(*rows, strict=True))
             columns = [v for v in columns if any(v)]
             # FIXME: Unnecessary comprehension with str() due to return type
             rows = [[str(w) for w in v] for v in list(zip(*columns, strict=True))]
 
-        if settings.config.format.sort_order == 'alpha-asc':
+        if settings.format.sort_order == 'alpha-asc':
             rows.sort(key=lambda x: x[0])
 
         table = [header, *rows]
 
-        if settings.config.format.collapsible_long_values:
+        if settings.format.collapsible_long_values:
             log.debug('Collapsing long values')
             _collapse_column(table, 'Value')
 
-        if settings.config.format.collapsible_long_types:
+        if settings.format.collapsible_long_types:
             log.debug('Collapsing long types')
             _collapse_column(table, 'Type')
 
-        if settings.config.format.collapsible_long_defaults:
+        if settings.format.collapsible_long_defaults:
             log.debug('Collapsing long defaults')
             _collapse_column(table, 'Default')
 
-        if settings.config.format.collapsible_long_description:
+        if settings.format.collapsible_long_description:
             log.debug('Collapsing long descriptions')
             _collapse_column(table, 'Description', keep_first_line=True)
 

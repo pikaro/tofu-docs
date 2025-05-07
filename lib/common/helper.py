@@ -6,7 +6,7 @@ import re
 from markdown_it import MarkdownIt
 from mdit_plain.renderer import RendererPlain
 
-from lib.settings import settings
+from lib.models.config import settings
 from lib.types import ReplaceableField
 
 log = logging.getLogger(__name__)
@@ -14,7 +14,7 @@ log = logging.getLogger(__name__)
 
 def field_replace(field: ReplaceableField, content: str) -> str:
     """Replace the field in the content by applying a list of regex patterns."""
-    for replace in settings.config.replace_formatted:
+    for replace in settings.replace_formatted:
         if replace.column == field:
             content = re.sub(replace.pattern, replace.replace, content)
     return content
@@ -134,7 +134,7 @@ def find_prop_in_block(text: str, prop: str) -> str:  # noqa: C901 PLR0912 # Too
 
 def marker(kind: str) -> str:
     """Return the marker for the given kind."""
-    return f'<!-- {settings.config.target_config.marker} {kind} -->'
+    return f'<!-- {settings.target_config.marker} {kind} -->'
 
 
 def if_index(lst: list[str], item: str) -> int:

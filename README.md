@@ -52,7 +52,9 @@ debug: false
 # The exit code to return if changes were made to the documentation
 changed_exit_code: 0
 
-# Target file to write the documentation to, relative to module root
+# Target file to write the documentation to
+# README.md would be relative to the module path
+# ./README.md would be in the current working directory
 target: 'README.md'
 
 target_config:

@@ -5,6 +5,7 @@ from pathlib import Path
 
 import hcl2
 
+from lib.models.config import settings
 from lib.models.input import (
     HclData,
     HclLocal,
@@ -13,7 +14,6 @@ from lib.models.input import (
     ParsedHclItem,
     ProcessedData,
 )
-from lib.settings import settings
 
 log = logging.getLogger(__name__)
 
@@ -71,7 +71,7 @@ class HclFile:
         _parse_kind('output')
         _parse_kind('validation')
 
-        allow_duplicates = not settings.config.format.add_resource_identifier
+        allow_duplicates = not settings.format.add_resource_identifier
 
         _parse_kind('resource', allow_duplicates=allow_duplicates)
 
@@ -89,23 +89,21 @@ class HclFile:
 
     def _process_validation(self):
         """Process the validations in the file."""
-        if settings.config.format.validation_remove or settings.config.format.validation_separate:
+        if settings.format.validation_remove or settings.format.validation_separate:
             validations = [v for v in self._data.output if v.is_validation]
+            validation_names = [v.name for v in validations]
             if validations:
-                validation_names = [v.name for v in validations]
                 self._data.output = list(filter(lambda x: x not in validations, self._data.output))
+            if settings.format.validation_remove:
                 log.warning(f'Removed {len(validations)} validations: {validation_names}')
-            if settings.config.format.validation_separate:
+            if settings.format.validation_separate:
                 self._data_processed.validation = validations
 
     def _process_resource(self):
         """Process the resources in the file."""
         for v in self._data.resource:
             identifier = v.root[v.name].name
-            if settings.config.format.add_resource_identifier:
-                name = f'{v.name}.{identifier}'
-            else:
-                name = v.name
+            name = f'{v.name}.{identifier}' if settings.format.add_resource_identifier else v.name
             resource = HclNamedResource(
                 root={
                     name: v.root[v.name].root[identifier],
