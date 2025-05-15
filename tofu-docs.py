@@ -4,9 +4,10 @@
 
 import logging
 import sys
-from difflib import unified_diff
 
 import colorlog
+
+from lib.writer import NotAFileException
 
 if __name__ == '__main__':
     handler = colorlog.StreamHandler()
@@ -41,24 +42,19 @@ if __name__ == '__main__':
 
     output = module.format()
 
-    writer = Writer()
-    result = writer.write(output)
+    try:
+        writer = Writer(output)
+    except NotAFileException:
+        sys.exit(settings.unchanged_exit_code)
 
-    if result.changed and result.original_content:
-        log.warning('Documentation was changed')
+    writer.write()
 
-        if settings.debug:
-            diff = unified_diff(
-                result.original_content.splitlines(),
-                result.content.splitlines(),
-                lineterm='',
-            )
-            log.debug(f'Diff for {settings.module_path / settings.target}:')
-            print('\n    '.join(diff))
-    elif not result.original_content:
-        log.warning('File was created')
+    if not writer.changed:
+        log.info('Documentation was not changed')
+        sys.exit(settings.unchanged_exit_code)
 
-    if result.changed:
-        sys.exit(settings.changed_exit_code)
+    if settings.changed_git_add:
+        log.info('Adding changes to git')
+        writer.git_add()
 
-    log.info('Documentation was not changed')
+    sys.exit(settings.changed_exit_code)

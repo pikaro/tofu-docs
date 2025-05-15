@@ -51,6 +51,8 @@ debug: false
 
 # The exit code to return if changes were made to the documentation
 changed_exit_code: 0
+# The exit code to return if no changes were made to the documentation
+unchanged_exit_code: 0
 
 # Target file to write the documentation to
 # README.md would be relative to the module path
@@ -124,12 +126,12 @@ replace:
     vars:
       namespace: globaldatanet/landing-zone-
     column: description
-  - pattern: ^any\s+#\s+passthrough to repo `([^`.]+)(\.([^`]+))?`$
+  - pattern: any\s+#\s+passthrough to repo `([^`.]+)(\.([^`]+))?`
     replace: See [\1](https://github.com/{namespace}\1/README.md#user-content-\3)
     vars:
       namespace: globaldatanet/
     column: type
-  - pattern: ^any\s+#\s+passthrough to module `([^`.]+)(\.([^`]+))?`$
+  - pattern: any\s+#\s+passthrough to module `([^`.]+)(\.([^`]+))?`
     replace: See [\1](https://github.com/{namespace}\1/README.md#user-content-\3)
     vars:
       namespace: globaldatanet/landing-zone-
