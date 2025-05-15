@@ -2,6 +2,7 @@
 
 import logging
 import re
+import shutil
 from pathlib import Path, PosixPath, WindowsPath
 from textwrap import dedent
 from typing import Any
@@ -161,6 +162,10 @@ class Settings(BaseSettings):
         default=False,
         description=('Automatically add the changed file to git.'),
     )
+    git_executable: str = Field(
+        default='/usr/bin/git',
+        description=('Path to the git executable. git appears to be empty in pre-commit hooks.'),
+    )
 
     target: str = Field(
         default='README.md',
@@ -252,6 +257,21 @@ class Settings(BaseSettings):
                 default_path,
             ),
         )
+
+    @field_validator('git_executable')
+    @classmethod
+    def validate_git_executable(cls, value: str) -> str:
+        """Validate the git executable path."""
+        if not Path(value).exists():
+            _err = f'Git executable {value} does not exist'
+            raise ValueError(_err)
+        if not Path(value).is_file():
+            _err = f'Git executable {value} is not a file'
+            raise ValueError(_err)
+        if not shutil.which(value):
+            _err = f'Git executable {value} is not executable'
+            raise ValueError(_err)
+        return value
 
     def dump(self):
         """Dump the settings to a config file."""

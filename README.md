@@ -32,7 +32,7 @@ Or via `pre-commit`:
 
 ```yaml
 - repo: https://github.com/pikaro/tofu-docs
-  rev: v0.3.1
+  rev: v0.4.0
   hooks:
     - id: tofu-docs
 ```
@@ -53,6 +53,10 @@ debug: false
 changed_exit_code: 0
 # The exit code to return if no changes were made to the documentation
 unchanged_exit_code: 0
+# Whether to git add the target file if it was changed
+changed_git_add: false
+# The path to git
+git_executable: git
 
 # Target file to write the documentation to
 # README.md would be relative to the module path
