@@ -17,7 +17,8 @@ RUN --mount=type=bind,source=./pyproject.toml,target=/app/pyproject.toml \
     poetry export -f requirements.txt --only main --no-interaction --no-ansi > requirements.txt && \
     deactivate && \
     rm -rf .venv && \
-    pip install --no-cache-dir -r requirements.txt
+    pip install --no-cache-dir -r requirements.txt && \
+    apk add --no-cache git=~2
 
 COPY ./tofu-docs.py /app/tofu-docs.py
 COPY ./lib /app/lib
@@ -59,4 +60,4 @@ ENV TOFU_DOCS_TARGET_CONFIG__INSERT_POSITION=
 ENV TOFU_DOCS_TARGET_CONFIG__MARKER=
 
 ENTRYPOINT ["/app/tofu-docs.py"]
-CMD ["--module_path", "/module"]
+CMD ["--module-path", "/src"]

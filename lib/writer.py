@@ -7,10 +7,22 @@ import sys
 from difflib import unified_diff
 from pathlib import Path
 
-import git
-
 from lib.common.helper import if_index, marker
 from lib.models.config import settings
+
+
+def _import_git():
+    os.environ['GIT_PYTHON_REFRESH'] = 'quiet'
+    import git
+
+    _ = os.environ.pop('GIT_PYTHON_REFRESH', None)
+
+    git.refresh(settings.git_executable)
+    return git
+
+
+git = _import_git()
+
 
 log = logging.getLogger(__name__)
 
@@ -141,7 +153,6 @@ class Writer:
         """Add the target file to git."""
         log.info(f'Adding {self._target} to git')
 
-        git.refresh(settings.git_executable)
         log.debug(f'Using git executable: {settings.git_executable}')
 
         repo = git.Repo(self._target, search_parent_directories=True)
