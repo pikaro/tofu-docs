@@ -117,26 +117,26 @@ format:
 # A list of patterns to search-replace per column, using Python regex.
 replace:
     # The pattern to search for
-  - pattern: repo `([^`.]+)(\.([^`]+))?`
+  - pattern: repo `([^`.]+)(?:\.([^`]+))?`
     # the replacement string, with curly braces for references to `vars`
-    replace: '[\1](https://github.com/{namespace}\1/README.md#user-content-\3)'
+    replace: '[\1](https://github.com/{namespace}\1/README.md#user-content-\2)'
     # A dictionary of variables to replace in the replacement string
     vars:
       namespace: globaldatanet/
     # The column to search in
     column: description
-  - pattern: module `([^`.]+)(\.([^`]+))?`
-    replace: '[\1](https://github.com/{namespace}\1/README.md#user-content-\3)'
+  - pattern: module `([^`.]+)(?:\.([^`]+))?`
+    replace: '[\1](https://github.com/{namespace}\1/README.md#user-content-\2)'
     vars:
       namespace: globaldatanet/landing-zone-
     column: description
-  - pattern: any\s+#\s+passthrough to repo `([^`.]+)(\.([^`]+))?`
-    replace: See [\1](https://github.com/{namespace}\1/README.md#user-content-\3)
+  - pattern: (?:optional\()?any(?:\))?\s+#\s+passthrough to repo `([^`.]+)(?:\.([^`]+))?`
+    replace: see [\1](https://github.com/{namespace}\1/readme.md#user-content-\2)
     vars:
       namespace: globaldatanet/
     column: type
-  - pattern: any\s+#\s+passthrough to module `([^`.]+)(\.([^`]+))?`
-    replace: See [\1](https://github.com/{namespace}\1/README.md#user-content-\3)
+  - pattern: (?:optional\()?any(?:\))?\s+#\s+passthrough to module `([^`.]+)(?:\.([^`]+))?`
+    replace: see [\1](https://github.com/{namespace}\1/readme.md#user-content-\2)
     vars:
       namespace: globaldatanet/landing-zone-
     column: type
