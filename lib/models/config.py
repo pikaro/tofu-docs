@@ -191,13 +191,15 @@ class Settings(BaseSettings):
             column='description',
         ),
         ReplaceSetting(
-            pattern=rf'any\s+#\s+passthrough to repo {RE_SPEC_REPO_WITH_VAR}',
+            pattern=rf'(?:optional\()?any(:?\))?\s+#\s+passthrough to repo {RE_SPEC_REPO_WITH_VAR}',
             replace=f'See {REPLACE_DEFAULT}',
             vars={'namespace': 'globaldatanet/'},
             column='type',
         ),
         ReplaceSetting(
-            pattern=rf'any\s+#\s+passthrough to module {RE_SPEC_REPO_WITH_VAR}',
+            pattern=(
+                rf'(?:optional\()?any(?:\))?\s+#\s+passthrough to module {RE_SPEC_REPO_WITH_VAR}'
+            ),
             replace=f'See {REPLACE_DEFAULT}',
             vars={'namespace': 'globaldatanet/landing-zone-'},
             column='type',
