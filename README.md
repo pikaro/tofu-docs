@@ -124,12 +124,12 @@ replace:
     vars:
       namespace: globaldatanet/landing-zone-
     column: description
-  - pattern: ^any\s+#\s+passthrough to repo `([^`.]+)(\.([^`]+))?`$
+  - pattern: any\s+#\s+passthrough to repo `([^`.]+)(\.([^`]+))?`
     replace: See [\1](https://github.com/{namespace}\1/README.md#user-content-\3)
     vars:
       namespace: globaldatanet/
     column: type
-  - pattern: ^any\s+#\s+passthrough to module `([^`.]+)(\.([^`]+))?`$
+  - pattern: any\s+#\s+passthrough to module `([^`.]+)(\.([^`]+))?`
     replace: See [\1](https://github.com/{namespace}\1/README.md#user-content-\3)
     vars:
       namespace: globaldatanet/landing-zone-
