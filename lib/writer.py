@@ -1,6 +1,7 @@
 """Writer for the target file."""
 
 import logging
+import os
 import re
 import sys
 from difflib import unified_diff
@@ -139,6 +140,9 @@ class Writer:
     def git_add(self) -> None:
         """Add the target file to git."""
         log.info(f'Adding {self._target} to git')
+
+        git.refresh(settings.git_executable)
+        log.debug(f'Using git executable: {settings.git_executable}')
 
         repo = git.Repo(self._target, search_parent_directories=True)
         log.debug(f'Found git repository at {repo.working_tree_dir}')
