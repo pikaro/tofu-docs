@@ -51,6 +51,8 @@ debug: false
 
 # The exit code to return if changes were made to the documentation
 changed_exit_code: 0
+# The exit code to return if no changes were made to the documentation
+unchanged_exit_code: 0
 
 # Target file to write the documentation to
 # README.md would be relative to the module path

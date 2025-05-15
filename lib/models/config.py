@@ -154,6 +154,13 @@ class Settings(BaseSettings):
     changed_exit_code: int = Field(
         default=0, description=('Exit code to return if the output file has changed. ')
     )
+    unchanged_exit_code: int = Field(
+        default=0, description=('Exit code to return if the output file has not changed. ')
+    )
+    changed_git_add: bool = Field(
+        default=False,
+        description=('Automatically add the changed file to git.'),
+    )
 
     target: str = Field(
         default='README.md',
