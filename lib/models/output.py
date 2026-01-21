@@ -2,7 +2,7 @@
 
 import logging
 from pathlib import Path
-from typing import Generic, TypeVar
+from typing import TypeVar
 
 from pydantic import BaseModel, computed_field
 
@@ -38,7 +38,7 @@ def register_model(input_model_cls):
     return decorator
 
 
-class ItemRow(BaseModel, Generic[RowT]):
+class ItemRow[RowT](BaseModel):
     """Represents a row in the item table."""
 
     def __init__(self, _data: 'ParsedHclItem', _name: str, _module_root: Path, **kwargs):
@@ -78,6 +78,22 @@ class ResourceRow(ItemRow[HclResourceFields]):
         """Return the link to the documentation."""
         provider, name = (self._name.split('.')[0]).split('_', 1)
         return TERRAFORM_URL.format(provider=provider, name=name)
+
+    @computed_field
+    @property
+    def precondition(self) -> str:
+        """Return the precondition of the output."""
+        if not self._data.data.precondition:
+            return ''
+        return format_validation('precondition', self._data.data.precondition)
+
+    @computed_field
+    @property
+    def postcondition(self) -> str:
+        """Return the postcondition of the output."""
+        if not self._data.data.postcondition:
+            return ''
+        return format_validation('postcondition', self._data.data.postcondition)
 
 
 @register_model(ParsedHclItem[HclLocalFields])
@@ -142,6 +158,8 @@ class OutputRow(ItemRow[HclOutputFields]):
     @property
     def precondition(self) -> str:
         """Return the precondition of the output."""
+        if not self._data.data.precondition:
+            return ''
         return format_validation('precondition', self._data.data.precondition)
 
     @computed_field

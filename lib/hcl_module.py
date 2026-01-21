@@ -53,7 +53,8 @@ class HclModule:
             _add_kind('locals')
             _add_kind('variable')
             _add_kind('output')
-            _add_kind('validation')
+            _add_kind('validation_output')
+            _add_kind('validation_resource')
 
             allow_duplicates = not settings.format.add_resource_identifier
             _add_kind('resource', allow_duplicates=allow_duplicates)
@@ -105,7 +106,11 @@ class HclModule:
         output += '<!-- markdownlint-disable -->\n'
 
         if settings.format.include_resources:
-            output += self._format_markdown_section('Resources', self._parsed_data.resource)
+            output += self._format_markdown_section(
+                'Resources',
+                self._parsed_data.resource,
+                skip_columns={'precondition', 'postcondition'},
+            )
         if settings.format.include_locals:
             output += self._format_markdown_section('Locals', self._parsed_data.locals)
 
@@ -125,8 +130,17 @@ class HclModule:
             output += self._format_markdown_section(
                 'Outputs', self._parsed_data.output, skip_columns=skip_columns
             )
+
+        if settings.format.include_validations:
             output += self._format_markdown_section(
-                'Validation', self._parsed_data.validation, skip_columns=skip_columns
+                'Validation Outputs',
+                self._parsed_data.validation_output,
+                skip_columns={'description', 'value'},
+            )
+            output += self._format_markdown_section(
+                'Validation Resources',
+                self._parsed_data.validation_resource,
+                skip_columns={'provider', 'documentation'},
             )
 
         output += '<!-- markdownlint-enable -->\n'

@@ -32,7 +32,7 @@ Or via `pre-commit`:
 
 ```yaml
 - repo: https://github.com/pikaro/tofu-docs
-  rev: v0.4.3
+  rev: v0.5.0
   hooks:
     - id: tofu-docs
 ```
@@ -95,8 +95,6 @@ format:
   sort_order: alpha-asc
   # Remove outputs starting with `validation_` and `validate_`
   validation_remove: false
-  # Put validations in a separate section
-  validation_separate: true
   # Remove empty columns from the tables
   remove_empty_columns: true
   # Make a separate section for required / optional variables
@@ -113,6 +111,8 @@ format:
   include_variables: true
   # Include outputs in the documentation
   include_outputs: true
+  # Include validations in the documentation
+  include_validations: true
 
 # A list of patterns to search-replace per column, using Python regex.
 replace:
