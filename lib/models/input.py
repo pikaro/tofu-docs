@@ -3,7 +3,7 @@
 import logging
 import re
 from pathlib import Path
-from typing import Any, Generic, TypeVar
+from typing import Any, TypeVar
 
 from pydantic import (
     BaseModel,
@@ -59,6 +59,34 @@ class HclResourceFields(RootModel):
 
     root: dict[str, Any]
 
+    def _get_condition(self, kind: str) -> list[HclValidation]:
+        """Return the precondition of the resource."""
+        try:
+            lifecycle = self.root['lifecycle'][0]
+        except KeyError:
+            return []
+        validations: list[HclValidation] = []
+        for v in lifecycle.get(kind, []):
+            validations.append(
+                HclValidation(
+                    condition=str(v.get('condition', '')),
+                    error_message=v.get('error_message', ''),
+                )
+            )
+        return validations
+
+    @computed_field
+    @property
+    def precondition(self) -> list[HclValidation]:
+        """Return the precondition of the resource."""
+        return self._get_condition('precondition')
+
+    @computed_field
+    @property
+    def postcondition(self) -> list[HclValidation]:
+        """Return the postcondition of the resource."""
+        return self._get_condition('postcondition')
+
 
 class HclNamedResource(RootModel):
     """Represents the fields of a resource in HCL."""
@@ -68,8 +96,42 @@ class HclNamedResource(RootModel):
     @computed_field
     @property
     def name(self) -> str:
-        """Return the name of the variable."""
+        """Return the name of the resource."""
         return next(iter(self.root.keys()))
+
+    def _get_condition(self, kind: str) -> list[HclValidation]:
+        """Return the precondition of the resource."""
+        try:
+            lifecycle = self.root[self.name].root['lifecycle'][0]
+        except KeyError:
+            return []
+        validations: list[HclValidation] = []
+        for v in lifecycle.get(kind, []):
+            validations.append(
+                HclValidation(
+                    condition=str(v.get('condition', '')),
+                    error_message=v.get('error_message', ''),
+                )
+            )
+        return validations
+
+    @computed_field
+    @property
+    def precondition(self) -> list[HclValidation]:
+        """Return the precondition of the resource."""
+        return self._get_condition('precondition')
+
+    @computed_field
+    @property
+    def postcondition(self) -> list[HclValidation]:
+        """Return the postcondition of the resource."""
+        return self._get_condition('postcondition')
+
+    @computed_field
+    @property
+    def is_validation(self) -> bool:
+        """Check if the output is a validation."""
+        return '.validation_' in self.name or '.validate_' in self.name
 
 
 class HclLocalFields(RootModel):
@@ -83,7 +145,7 @@ HclDataModel = HclVariableFields | HclOutputFields | HclLocalFields | HclResourc
 ParsableT = TypeVar('ParsableT', bound=HclDataModel)
 
 
-class ParsedHclItem(BaseModel, Generic[ParsableT]):
+class ParsedHclItem[ParsableT](BaseModel):
     """Represents the variable fields with the LOC included."""
 
     data: ParsableT
@@ -156,6 +218,14 @@ class HclOutput(SingleElementRootModel[HclOutputFields]):
         """Check if the output is a validation."""
         return self.name.startswith(('validate_', 'validation_'))
 
+    @computed_field
+    @property
+    def validations(self) -> list[HclValidation] | None:
+        """Return the validation if present."""
+        if not self.is_validation:
+            return None
+        return self.root[self.name].precondition + self.root[self.name].postcondition
+
 
 class HclLocalBlock(HclRootModel[HclLocalFields]):
     """Represents a local block in HCL.
@@ -221,7 +291,8 @@ class ProcessedData(BaseModel):
     locals: list[HclLocal] = []
     variable: list[HclVariable] = []
     output: list[HclOutput] = []
-    validation: list[HclOutput] = []
+    validation_output: list[HclOutput] = []
+    validation_resource: list[HclNamedResource] = []
 
 
 class ParsedData(BaseModel):
@@ -231,4 +302,5 @@ class ParsedData(BaseModel):
     locals: dict[str, ParsedHclItem[HclLocalFields]] = {}
     variable: dict[str, ParsedHclItem[HclVariableFields]] = {}
     output: dict[str, ParsedHclItem[HclOutputFields]] = {}
-    validation: dict[str, ParsedHclItem[HclOutputFields]] = {}
+    validation_output: dict[str, ParsedHclItem[HclOutputFields]] = {}
+    validation_resource: dict[str, ParsedHclItem[HclResourceFields]] = {}

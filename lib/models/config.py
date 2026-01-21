@@ -124,6 +124,7 @@ class FormatSettings(BaseModel):
     include_locals: bool = Field(default=True, description='Include locals')
     include_variables: bool = Field(default=True, description='Include variables')
     include_outputs: bool = Field(default=True, description='Include outputs')
+    include_validations: bool = Field(default=True, description='Include validations')
 
 
 class ReplaceSetting(BaseModel):

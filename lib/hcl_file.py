@@ -39,8 +39,9 @@ class HclFile:
         self._data_parsed = ParsedData()
 
         self._process_locals()
-        self._process_validation()
+        self._process_validation_outputs()
         self._process_resource()
+        self._process_validation_resources()
         self._process_variable()
         self._process_output()
 
@@ -69,7 +70,8 @@ class HclFile:
         _parse_kind('locals')
         _parse_kind('variable')
         _parse_kind('output')
-        _parse_kind('validation')
+        _parse_kind('validation_output')
+        _parse_kind('validation_resource')
 
         allow_duplicates = not settings.format.add_resource_identifier
 
@@ -87,17 +89,29 @@ class HclFile:
                 )
         self._data_processed.locals = single_locals
 
-    def _process_validation(self):
-        """Process the validations in the file."""
-        if settings.format.validation_remove or settings.format.validation_separate:
-            validations = [v for v in self._data.output if v.is_validation]
-            validation_names = [v.name for v in validations]
-            if validations:
-                self._data.output = list(filter(lambda x: x not in validations, self._data.output))
-            if settings.format.validation_remove:
-                log.warning(f'Removed {len(validations)} validations: {validation_names}')
-            if settings.format.validation_separate:
-                self._data_processed.validation = validations
+    def _process_validation_outputs(self):
+        validations = [v for v in self._data.output if v.is_validation]
+        validation_names = [v.name for v in validations]
+        if validations:
+            self._data.output = list(filter(lambda x: x not in validations, self._data.output))
+        if settings.format.validation_remove:
+            log.warning(f'Removed {len(validations)} output validations: {validation_names}')
+        elif validations:
+            log.info(f'Found {len(validations)} output validations: {validation_names}')
+        self._data_processed.validation_output = validations
+
+    def _process_validation_resources(self):
+        validations = [v for v in self._data_processed.resource if v.is_validation]
+        validation_names = [v.name for v in validations]
+        if validations:
+            self._data_processed.resource = list(
+                filter(lambda x: x not in validations, self._data_processed.resource)
+            )
+        if settings.format.validation_remove:
+            log.warning(f'Removed {len(validations)} resource validations: {validation_names}')
+        elif validations:
+            log.info(f'Found {len(validations)} resource validations: {validation_names}')
+        self._data_processed.validation_resource = validations
 
     def _process_resource(self):
         """Process the resources in the file."""
