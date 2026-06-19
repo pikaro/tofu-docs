@@ -1,0 +1,42 @@
+exclude        = [".venv", "workspace"]
+line-length = 100
+indent-width = 4
+target-version = "py314"
+
+[lint]
+select = ["ALL"]
+
+ignore = [
+    "D",
+    "T201", # Print found
+    "Q000", # Single-quote
+    # Covered by Pyright
+    "F821", # Unknown name
+    "F401", # Unused import
+    "G004", # logging uses f-string
+    "TD001", # FIXME not allowed
+    "TD002", # TODO author
+    "TD003", # TODO link
+    "FIX001", # fix FIXME
+    "ANN401", # Any forbidden
+]
+
+fixable   = ["ALL"]
+unfixable = []
+
+[lint.isort]
+combine-as-imports = true
+
+[lint.mccabe]
+max-complexity = 10
+
+[lint.pydocstyle]
+convention = "google"
+
+[format]
+quote-style = "single"
+indent-style               = "space"
+skip-magic-trailing-comma  = false
+line-ending                = "auto"
+docstring-code-format      = true
+docstring-code-line-length = "dynamic"

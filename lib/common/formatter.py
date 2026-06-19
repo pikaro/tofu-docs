@@ -1,10 +1,13 @@
 """Common functions."""
 
 import re
+from typing import TYPE_CHECKING
 
 from lib.common.helper import field_replace
-from lib.models.input import HclValidation
-from lib.types import ValidationField
+
+if TYPE_CHECKING:
+    from lib.models.input import HclValidation
+    from lib.types import ValidationField
 
 RE_UL = re.compile(r'<li>(.+)</li>')
 RE_LI = re.compile('^- (.+)$')

@@ -1,5 +1,7 @@
 """Models."""
 
+from __future__ import annotations
+
 import logging
 import re
 import shutil
@@ -19,12 +21,17 @@ from pydantic_settings.sources import ConfigFileSourceMixin
 from ruamel.yaml import YAML
 
 from lib.const import RE_SPEC_REPO_WITH_VAR, REPLACE_DEFAULT
-from lib.types import InsertPosition, OutputFormat, ReplaceableField, SortOrder
+from lib.types import (  # noqa: TC001  # Pydantic resolves these aliases at runtime.
+    InsertPosition,
+    OutputFormat,
+    ReplaceableField,
+    SortOrder,
+)
 
 log = logging.getLogger(__name__)
 
 
-def _path_representer(self, value: Path) -> str:
+def _path_representer(self, value: Path) -> str:  # noqa: ANN001 # self type
     """Represent a Path object as a string."""
     return self.represent_scalar('tag:yaml.org,2002:str', str(value.as_posix()), style="'")
 
@@ -40,7 +47,7 @@ yaml.representer.add_representer(WindowsPath, _path_representer)
 class LateYamlConfigSettingsSource(InitSettingsSource, ConfigFileSourceMixin):
     """A source class that loads variables from a yaml file."""
 
-    def __init__(self, default_path: Path):
+    def __init__(self, default_path: Path) -> None:
         """Initialize the YAML config settings source."""
         self.yaml_file = default_path
 
@@ -103,7 +110,8 @@ class FormatSettings(BaseModel):
     collapsible_long_types: bool = Field(default=True, description='Collapsible long types')
     collapsible_long_defaults: bool = Field(default=True, description='Collapsible long defaults')
     collapsible_long_description: bool = Field(
-        default=True, description='Collapsible long description'
+        default=True,
+        description='Collapsible long description',
     )
 
     collapsible_long_threshold: int = Field(default=25, description='Collapsible long threshold')
@@ -133,7 +141,8 @@ class ReplaceSetting(BaseModel):
     pattern: str = Field(description='Regex pattern to search for')
     replace: str = Field(description='Replacement string')
     vars: dict[str, str] = Field(
-        default_factory=dict, description='Variables to replace in the pattern'
+        default_factory=dict,
+        description='Variables to replace in the pattern',
     )
     column: ReplaceableField = Field(description='Column to replace in')
 
@@ -154,10 +163,12 @@ class Settings(BaseSettings):
 
     debug: bool = Field(default=False, description='Enable debug mode')
     changed_exit_code: int = Field(
-        default=0, description=('Exit code to return if the output file has changed. ')
+        default=0,
+        description=('Exit code to return if the output file has changed. '),
     )
     unchanged_exit_code: int = Field(
-        default=0, description=('Exit code to return if the output file has not changed. ')
+        default=0,
+        description=('Exit code to return if the output file has not changed. '),
     )
     changed_git_add: bool = Field(
         default=False,
@@ -240,7 +251,10 @@ class Settings(BaseSettings):
 
     @classmethod
     def settings_customise_sources(
-        cls, settings_cls: type[BaseSettings], *_args, **_kwargs
+        cls,
+        settings_cls: type[BaseSettings],
+        *_args,  # noqa: ANN002
+        **_kwargs,  # noqa: ANN003
     ) -> tuple[PydanticBaseSettingsSource, ...]:
         """Workaround for lack of ability to specify path to the config file."""
         _ = (_args, _kwargs)
@@ -276,7 +290,7 @@ class Settings(BaseSettings):
             raise ValueError(_err)
         return value
 
-    def dump(self):
+    def dump(self) -> None:
         """Dump the settings to a config file."""
         config_file = Path(self.config_file)
 
@@ -289,7 +303,8 @@ class Settings(BaseSettings):
             with config_file.open('w', encoding='utf-8') as f:
                 config = self.model_dump(round_trip=True)
                 yaml.dump(
-                    {k: v for k, v in config.items() if k not in self.Config.cli_only_args}, f
+                    {k: v for k, v in config.items() if k not in self.Config.cli_only_args},
+                    f,
                 )
 
     class Config:

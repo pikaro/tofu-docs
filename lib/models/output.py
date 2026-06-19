@@ -1,8 +1,8 @@
 """Output models."""
 
 import logging
-from pathlib import Path
-from typing import TypeVar
+from pathlib import Path  # noqa: TC003  # Pydantic resolves this model field at runtime.
+from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 from pydantic import BaseModel, computed_field
 
@@ -18,30 +18,25 @@ from lib.models.input import (
     ParsedHclItem,
 )
 
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
 RowT = TypeVar('RowT', bound=HclDataModel)
 
 
-_registry: dict[type[HclDataModel], type['ItemRow']] = {}
-
 log = logging.getLogger(__name__)
-
-
-def register_model(input_model_cls):
-    """Register an association between input and output models."""
-
-    def decorator(output_model_cls):
-        """Register a model with the registry."""
-        _registry[input_model_cls] = output_model_cls
-        log.debug(f'Registered {input_model_cls} -> {output_model_cls}')
-        return output_model_cls
-
-    return decorator
 
 
 class ItemRow[RowT](BaseModel):
     """Represents a row in the item table."""
 
-    def __init__(self, _data: 'ParsedHclItem', _name: str, _module_root: Path, **kwargs):
+    def __init__(
+        self,
+        _data: ParsedHclItem[RowT],
+        _name: str,
+        _module_root: Path,
+        **kwargs: object,
+    ) -> None:
         """Initialize the row."""
         super().__init__(**kwargs)
         self._data = _data
@@ -58,6 +53,23 @@ class ItemRow[RowT](BaseModel):
         """Return a link to the resource."""
         relative_path = self._data.file.relative_to(self._module_root)
         return f'<a href="/{relative_path}#L{self._data.loc}" name="{self._name}">{self._name}</a>'
+
+
+_registry: dict[type[ParsedHclItem[Any]], type[ItemRow[Any]]] = {}
+
+
+def register_model[ModelT: HclDataModel](
+    input_model_cls: type[ParsedHclItem[ModelT]],
+) -> Callable[[type[ItemRow[ModelT]]], type[ItemRow[ModelT]]]:
+    """Register an association between input and output models."""
+
+    def decorator(output_model_cls: type[ItemRow[ModelT]]) -> type[ItemRow[ModelT]]:
+        """Register a model with the registry."""
+        _registry[input_model_cls] = output_model_cls
+        log.debug(f'Registered {input_model_cls} -> {output_model_cls}')
+        return output_model_cls
+
+    return decorator
 
 
 @register_model(ParsedHclItem[HclResourceFields])
@@ -171,11 +183,13 @@ class OutputRow(ItemRow[HclOutputFields]):
         return format_validation('postcondition', self._data.data.postcondition)
 
 
-def get_output_model(input_model_cls):
+def get_output_model[ModelT: HclDataModel](
+    input_model_cls: type[ParsedHclItem[ModelT]],
+) -> type[ItemRow[ModelT]]:
     """Get the output model associated with the input model."""
     ret = _registry.get(input_model_cls)
 
     if ret is None:
         _err = f'No output model found for {input_model_cls}'
         raise ValueError(_err)
-    return ret
+    return cast('type[ItemRow[ModelT]]', ret)

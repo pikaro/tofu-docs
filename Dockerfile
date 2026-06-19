@@ -4,20 +4,15 @@ ENV PYTHONPATH="/usr/local/lib/python3.13/site-packages"
 
 WORKDIR /app
 
-# FIXME: https://github.com/python/cpython/issues/120308
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+ENV UV_LINK_MODE=copy
+ENV VIRTUAL_ENV=/app/.venv
+ENV PATH="/app/.venv/bin:$PATH"
 
-# Writing and reading from / to file in same pipeline -> false positive
-# hadolint ignore=SC2094
-RUN --mount=type=bind,source=./pyproject.toml,target=/app/pyproject.toml \
-    --mount=type=bind,source=./poetry.lock,target=/app/poetry.lock \
-    python3 -m venv .venv && \
-    source .venv/bin/activate && \
-    pip install --no-cache-dir 'poetry>=2.0,<3.0' && \
-    poetry self add poetry-plugin-export && \
-    poetry export -f requirements.txt --only main --no-interaction --no-ansi > requirements.txt && \
-    deactivate && \
-    rm -rf .venv && \
-    pip install --no-cache-dir -r requirements.txt && \
+RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,source=./pyproject.toml,target=/app/pyproject.toml \
+    --mount=type=bind,source=./uv.lock,target=/app/uv.lock \
+    uv sync --frozen --no-dev --no-install-project && \
     apk add --no-cache git=~2
 
 COPY ./tofu-docs.py /app/tofu-docs.py

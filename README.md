@@ -18,7 +18,7 @@ Either run it locally:
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-poetry install
+uv install
 tofu-docs --module_path <path>
 ```
 
@@ -32,7 +32,7 @@ Or via `pre-commit`:
 
 ```yaml
 - repo: https://github.com/pikaro/tofu-docs
-  rev: v0.5.0
+  rev: v0.6.0
   hooks:
     - id: tofu-docs
 ```
