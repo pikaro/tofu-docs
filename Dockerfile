@@ -1,6 +1,6 @@
-FROM python:3.13-alpine
+FROM python:3.14-alpine
 
-ENV PYTHONPATH="/usr/local/lib/python3.13/site-packages"
+ENV PYTHONPATH="/usr/local/lib/python3.14/site-packages"
 
 WORKDIR /app
 
