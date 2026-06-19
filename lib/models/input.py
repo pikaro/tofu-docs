@@ -2,8 +2,8 @@
 
 import logging
 import re
-from pathlib import Path
-from typing import Any, TypeVar
+from pathlib import Path  # noqa: TC003  # Pydantic resolves this model field at runtime.
+from typing import Any, Self, TypeVar
 
 from pydantic import (
     BaseModel,
@@ -65,14 +65,13 @@ class HclResourceFields(RootModel):
             lifecycle = self.root['lifecycle'][0]
         except KeyError:
             return []
-        validations: list[HclValidation] = []
-        for v in lifecycle.get(kind, []):
-            validations.append(
-                HclValidation(
-                    condition=str(v.get('condition', '')),
-                    error_message=v.get('error_message', ''),
-                )
+        validations: list[HclValidation] = [
+            HclValidation(
+                condition=str(v.get('condition', '')),
+                error_message=v.get('error_message', ''),
             )
+            for v in lifecycle.get(kind, [])
+        ]
         return validations
 
     @computed_field
@@ -105,14 +104,13 @@ class HclNamedResource(RootModel):
             lifecycle = self.root[self.name].root['lifecycle'][0]
         except KeyError:
             return []
-        validations: list[HclValidation] = []
-        for v in lifecycle.get(kind, []):
-            validations.append(
-                HclValidation(
-                    condition=str(v.get('condition', '')),
-                    error_message=v.get('error_message', ''),
-                )
+        validations: list[HclValidation] = [
+            HclValidation(
+                condition=str(v.get('condition', '')),
+                error_message=v.get('error_message', ''),
             )
+            for v in lifecycle.get(kind, [])
+        ]
         return validations
 
     @computed_field
@@ -177,7 +175,7 @@ class SingleElementRootModel(HclRootModel[ListableT]):
         return next(iter(self.root.keys()))
 
     @model_validator(mode='after')
-    def validate_root(self):
+    def validate_root(self) -> Self:
         """Validate the root of the element."""
         if len(self.root) != 1:
             _err = 'There must be exactly one element defined.'

@@ -11,9 +11,9 @@ from lib.common.helper import if_index, marker
 from lib.models.config import settings
 
 
-def _import_git():
+def _import_git():  # noqa: ANN202 # module return type
     os.environ['GIT_PYTHON_REFRESH'] = 'quiet'
-    import git
+    import git  # noqa: PLC0415
 
     _ = os.environ.pop('GIT_PYTHON_REFRESH', None)
 
@@ -110,7 +110,7 @@ class Writer:
 
         self._target = target
 
-    def write(self):
+    def write(self) -> None:
         """Write the generated documentation to the target file."""
         self._original_content = self._target.read_text()
         lines = self._original_content.splitlines()
@@ -133,7 +133,7 @@ class Writer:
         """Check if the target file was changed."""
         return self._changed
 
-    def diff(self):
+    def diff(self) -> None:
         """Show the diff between the original and updated content."""
         if self._changed and self._original_content and self._updated_content:
             log.warning('Documentation was changed')

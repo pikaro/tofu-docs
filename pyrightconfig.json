@@ -1,0 +1,24 @@
+{
+  "exclude": [
+    ".venv",
+    "**/.venv",
+    "**/__pycache__",
+    "**/*.pyc",
+    "workspace",
+    "build",
+    "dist"
+  ],
+  "venv": ".venv",
+  "venvPath": ".",
+  "autoSearchPaths": true,
+  "autoImportCompletions": true,
+  "diagnosticMode": "workspace",
+  "typeCheckingMode": "standard",
+  "useLibraryCodeForTypes": true,
+  "reportShadowedImport": "warning",
+  "reportMissingSuperCall": false,
+  "reportUninitializedInstanceVariable": "warning",
+  "reportPropertyTypeMismatch": "warning",
+  "reportUnusedCallResult": "warning",
+  "reportUnusedImport": "information"
+}

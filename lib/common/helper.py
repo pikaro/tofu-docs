@@ -2,12 +2,15 @@
 
 import logging
 import re
+from typing import TYPE_CHECKING
 
 from markdown_it import MarkdownIt
 from mdit_plain.renderer import RendererPlain
 
 from lib.models.config import settings
-from lib.types import ReplaceableField
+
+if TYPE_CHECKING:
+    from lib.types import ReplaceableField
 
 log = logging.getLogger(__name__)
 
@@ -79,18 +82,12 @@ def find_prop_in_block(text: str, prop: str) -> str:  # noqa: C901 PLR0912 # Too
     heredoc_name = None
     ret = ''
 
-    def _in_text():
+    def _in_text() -> bool:
         return in_quoted or in_heredoc
 
     while idx < len(text):
         c = text[idx]
         ret += c
-        # log.debug(
-        #    f'c: {c}, idx: {idx}, line_ended: {line_ended}, '
-        #    f'bracket_stack: {bracket_stack}, ret: {ret}, '
-        #    f'in_quoted: {in_quoted}, in_heredoc: {in_heredoc}, '
-        #    f'heredoc_name: {heredoc_name}'
-        # )
         if c == '"' and not in_heredoc and not is_escaped:
             in_quoted = not in_quoted
         elif c == '<' and not _in_text() and (match := re.match(RE_HEREDOC, text[idx:])):

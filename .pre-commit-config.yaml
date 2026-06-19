@@ -5,30 +5,45 @@ default_install_hook_types:
 default_stages:
   - pre-commit
 
-exclude: '^.github'
+exclude: "^.github"
 repos:
   - repo: https://github.com/mxab/pre-commit-trivy.git
-    rev: v0.15.0
+    rev: v0.18.0
     hooks:
       - id: trivyfs-docker
-        args: ['poetry.lock']
+        args: ["uv.lock"]
+        priority: 1
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.11.8
+    rev: v0.15.18
     hooks:
-      - id: ruff
+      - id: ruff-check
+        priority: 1
       - id: ruff-format
+        priority: 1
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
       - id: check-merge-conflict
+        priority: 1
       - id: trailing-whitespace
+        priority: 1
       - id: end-of-file-fixer
+        priority: 1
       - id: check-json
+        priority: 1
       - id: check-added-large-files
+        priority: 1
       - id: check-yaml
+        priority: 1
+  - repo: https://github.com/RobertCraigie/pyright-python
+    rev: v1.1.408
+    hooks:
+      - id: pyright
+        priority: 1
   - repo: https://github.com/compilerla/conventional-pre-commit
-    rev: v4.1.0
+    rev: v4.4.0
     hooks:
       - id: conventional-pre-commit
         stages: [commit-msg]
         args: []
+        priority: 1

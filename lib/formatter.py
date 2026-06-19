@@ -2,7 +2,7 @@
 
 import logging
 import re
-from typing import TYPE_CHECKING, Generic, TypeVar
+from typing import TYPE_CHECKING
 
 import tabulate
 
@@ -16,15 +16,13 @@ if TYPE_CHECKING:
 
     from lib.types import OutputFormat
 
-FormattableT = TypeVar('FormattableT', bound=ParsedHclItem)
-
 log = logging.getLogger(__name__)
 
 RE_BR = re.compile(r'(^(\s*<br/>\s*)+|(\s*<br/>\s*)+$)')
 RE_PRE = re.compile(r'</?pre>')
 
 
-def _collapse_column(table: list[list[str]], column: str, keep_first_line: bool = False) -> None:
+def _collapse_column(table: list[list[str]], column: str, *, keep_first_line: bool = False) -> None:
     """Collapse a column in the table."""
     idx = if_index(table[0], column)
     if idx != -1:
@@ -46,7 +44,7 @@ def _collapse_column(table: list[list[str]], column: str, keep_first_line: bool 
             row[idx] = f'{first}<br/>{elem}' if keep_first_line else elem
 
 
-class Formatter(Generic[FormattableT]):
+class Formatter[FormattableT: ParsedHclItem]:
     """Formatter for formattable models."""
 
     data: dict[str, FormattableT]
@@ -85,7 +83,9 @@ class Formatter(Generic[FormattableT]):
         for row_item_name, row_item in self.data.items():
             log.debug(f'Formatting {row_item_name}')
             formatted = row_model(
-                _data=row_item, _name=row_item_name, _module_root=settings.module_path
+                _data=row_item,
+                _name=row_item_name,
+                _module_root=settings.module_path,
             )
             rows.append([str(getattr(formatted, v)) for v in fields if v not in self.skip_columns])
 

@@ -7,5 +7,11 @@ InsertPosition = Literal['bottom']
 SortOrder = Literal['alpha-asc']
 ValidationField = Literal['validation', 'precondition', 'postcondition']
 ReplaceableField = Literal[
-    'description', 'type', 'default', 'validation', 'value', 'precondition', 'postcondition'
+    'description',
+    'type',
+    'default',
+    'validation',
+    'value',
+    'precondition',
+    'postcondition',
 ]

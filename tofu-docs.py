@@ -19,7 +19,7 @@ if __name__ == '__main__':
             ),
             datefmt='%H:%M:%S',
             style='%',
-        )
+        ),
     )
 
     root_log = logging.getLogger()

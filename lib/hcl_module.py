@@ -25,7 +25,7 @@ class HclModule:
     _data: list[HclFile]
     _parsed_data: ParsedData
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize an OpenTofu module."""
         self._data = []
 
@@ -40,7 +40,7 @@ class HclModule:
 
         for f in self._data:
 
-            def _add_kind(kind: str, allow_duplicates: bool = False, f=f) -> None:
+            def _add_kind(kind: str, *, allow_duplicates: bool = False, f: HclFile = f) -> None:
                 source_data = getattr(f.get_parsed_data(), kind)
                 data = getattr(self._parsed_data, kind)
 
@@ -118,7 +118,9 @@ class HclModule:
             if settings.format.required_variables_first:
                 data = {k: v for k, v in self._parsed_data.variable.items() if v.data.required}
                 output += self._format_markdown_section(
-                    'Required Variables', data, skip_columns={'default'}
+                    'Required Variables',
+                    data,
+                    skip_columns={'default'},
                 )
                 data = {k: v for k, v in self._parsed_data.variable.items() if not v.data.required}
                 output += self._format_markdown_section('Optional Variables', data)
@@ -128,7 +130,9 @@ class HclModule:
         if settings.format.include_outputs:
             skip_columns = None if settings.format.add_output_value else {'value'}
             output += self._format_markdown_section(
-                'Outputs', self._parsed_data.output, skip_columns=skip_columns
+                'Outputs',
+                self._parsed_data.output,
+                skip_columns=skip_columns,
             )
 
         if settings.format.include_validations:
