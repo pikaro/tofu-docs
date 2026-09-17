@@ -7,7 +7,7 @@ import re
 import shutil
 from pathlib import Path, PosixPath, WindowsPath
 from textwrap import dedent
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, Field, ValidationInfo, computed_field, field_validator
 from pydantic_settings import (
@@ -27,6 +27,9 @@ from lib.types import (  # noqa: TC001  # Pydantic resolves these aliases at run
     ReplaceableField,
     SortOrder,
 )
+
+if TYPE_CHECKING:
+    from importlib.resources.abc import Traversable
 
 log = logging.getLogger(__name__)
 
@@ -57,9 +60,9 @@ class LateYamlConfigSettingsSource(InitSettingsSource, ConfigFileSourceMixin):
             self.yaml_file = self.current_state['config_file']
         return self._read_files(self.yaml_file)
 
-    def _read_file(self, path: Path) -> dict[str, Any]:
+    def _read_file(self, path: Path | Traversable) -> dict[str, Any]:
         """Read a YAML file and return its contents as a dictionary."""
-        if not path.exists():
+        if not path.is_file():
             _err = f'Config file {path} does not exist'
             raise FileNotFoundError(_err)
         with path.open(encoding='utf-8') as f:

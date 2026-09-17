@@ -32,7 +32,7 @@ Or via `pre-commit`:
 
 ```yaml
 - repo: https://github.com/pikaro/tofu-docs
-  rev: v0.6.3
+  rev: v0.6.4
   hooks:
     - id: tofu-docs
 ```

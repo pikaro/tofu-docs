@@ -9,10 +9,12 @@ docker run --rm --network none --user 0 --entrypoint /bin/sh "$image" -eu -c '
     git init -q /src
     printf "# Test module\n" > /src/README.md
     printf "variable \"name\" {\n  type = string\n  description = \"Test input\"\n}\n" > /src/main.tf
+    printf "target_config:\n  heading: Container configuration test\n" > /src/.tofu-docs.yml
     chown -R 12345:12345 /src
 
     /app/tofu-docs.py --module-path=/src --changed-git-add
     test "$(git -C /src diff --cached --name-only)" = README.md
+    grep -q "Container configuration test" /src/README.md
 
     mkdir /untrusted
     git init -q /untrusted
