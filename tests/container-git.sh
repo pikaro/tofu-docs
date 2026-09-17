@@ -12,7 +12,7 @@ docker run --rm --network none --user 0 --entrypoint /bin/sh "$image" -eu -c '
     printf "target_config:\n  heading: Container configuration test\n" > /src/.tofu-docs.yml
     chown -R 12345:12345 /src
 
-    /app/tofu-docs.py --module-path=/src --changed-git-add
+    /app/tofu-docs.py --module-path=/src --config-file=/src/.tofu-docs.yml --changed-git-add
     test "$(git -C /src diff --cached --name-only)" = README.md
     grep -q "Container configuration test" /src/README.md
 
