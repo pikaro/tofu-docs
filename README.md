@@ -25,19 +25,31 @@ tofu-docs --module_path <path>
 Or via Docker:
 
 ```bash
-docker run -v .:/module 70696b61726f/tofu-docs:latest
+docker run -v .:/src 70696b61726f/tofu-docs:latest
 ```
 
 Or via `pre-commit`:
 
 ```yaml
 - repo: https://github.com/pikaro/tofu-docs
-  rev: v0.6.2
+  rev: v0.6.3
   hooks:
     - id: tofu-docs
 ```
 
 For CLI arguments, see `tofu-docs --help`.
+
+The container trusts the checkout mounted at `/src` for Git operations, including
+`--changed-git-add`, even when its host ownership differs from the container user.
+This exception is confined to the image and that mount path; it does not change
+your host Git configuration.
+
+To verify container staging after a build:
+
+```bash
+docker build -t tofu-docs:test .
+bash tests/container-git.sh tofu-docs:test
+```
 
 ## Configuration
 

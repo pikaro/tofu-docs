@@ -15,6 +15,9 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev --no-install-project && \
     apk add --no-cache git=~2
 
+# Hook runners mount the selected checkout here; its host UID may differ.
+RUN git config --system --add safe.directory /src
+
 COPY ./tofu-docs.py /app/tofu-docs.py
 COPY ./lib /app/lib
 
