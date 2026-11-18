@@ -48,7 +48,7 @@ class HclVariableFields(BaseModel):
 class HclOutputFields(BaseModel):
     """Represents the fields of an output in HCL."""
 
-    value: str | None
+    value: Any
     description: str
     precondition: list[HclValidation] = []
     postcondition: list[HclValidation] = []
