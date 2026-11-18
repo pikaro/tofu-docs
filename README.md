@@ -32,17 +32,17 @@ Or via `pre-commit`:
 
 ```yaml
 - repo: https://github.com/pikaro/tofu-docs
-  rev: v0.6.4
+  rev: v0.6.5
   hooks:
     - id: tofu-docs
 ```
 
 For CLI arguments, see `tofu-docs --help`.
 
-The container trusts the checkout mounted at `/src` for Git operations, including
-`--changed-git-add`, even when its host ownership differs from the container user.
-This exception is confined to the image and that mount path; it does not change
-your host Git configuration.
+The container trusts the checkout mounted at `/src` for Git operations,
+including `--changed-git-add`, even when its host ownership differs from the
+container user. This exception is confined to the image and that mount path; it
+does not change your host Git configuration.
 
 To verify container staging after a build:
 

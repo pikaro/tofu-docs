@@ -3,7 +3,7 @@ name    = "tofu-docs"
 version = "0.0.1"
 requires-python = ">=3.14"
 dependencies = [
-    "python-hcl2==8.1.2",
+    "python-hcl2==8.2.0",
     "pydantic>=2.11.4",
     "colorlog>=6.9.0",
     "ruamel-yaml>=0.18.10",
